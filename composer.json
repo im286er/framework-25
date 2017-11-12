@@ -1,0 +1,23 @@
+{
+    "name": "huangshaowen/framework",
+    "type": "library",
+    "license": "MIT",
+    "description": "PHP framework",
+    "authors": [
+        {
+            "name": "huangshaowen",
+            "email": "40477536@qq.com",
+        }
+    ],
+    "require": {
+        "php": ">=7.0",
+        "ext-pcntl": "*",
+        "ext-posix": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "framework\\": "./"
+        }
+    },
+    "minimum-stability": "master"
+}
