@@ -1,5 +1,7 @@
 <?php
 
+namespace Framework;
+
 /**
  * 日志类
  * Log::write 写入日志

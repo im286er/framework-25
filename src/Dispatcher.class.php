@@ -1,4 +1,5 @@
 <?php
+namespace Framework;
 
 /**
  * 调度

@@ -1,5 +1,7 @@
 <?php
 
+namespace Framework;
+
 /**
  * 路由解析类
  */

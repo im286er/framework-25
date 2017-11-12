@@ -1,5 +1,7 @@
 <?php
 
+namespace Framework;
+
 /**
  * 
  * 网站配置
