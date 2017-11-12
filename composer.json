@@ -16,7 +16,7 @@
     },
     "autoload": {
         "psr-4": {
-            "framework\\": "src"
+            "framework\\": "src/"
         }
     },
     "minimum-stability": "dev"
