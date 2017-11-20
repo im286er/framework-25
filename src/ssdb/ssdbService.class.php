@@ -10,15 +10,46 @@ class ssdbService {
     private $conf;
     private $link;
 
+    /**
+     * 是否连接server
+     * @var boolean
+     */
+    private $isConnected = false;
+
+    /**
+     * 重连次数
+     * @var int
+     */
+    private $reConnected = 0;
+
+    /**
+     * 最大重连次数,默认为3次
+     * @var int
+     */
+    private $maxReConnected = 3;
+
     public function __construct($conf_name = 'ssdb_cache') {
-        $this->conf = C($conf_name);
+        $this->conf = Config::get($conf_name);
+
+        $this->connect();
+    }
+
+    /**
+     * 连接ssdb
+     */
+    private function connect() {
 
         foreach ($this->conf as $k => $conf) {
+
             try {
                 $con = new SimpleSSDB($conf['host'], $conf['port'], 5000);
+                $this->isConnected = true;
             } catch (Exception $e) {
+                $this->exception($ex);
+                $this->isConnected = false;
                 continue;
             }
+
             if (!($con == false)) {
                 /* ssdb 需要验证 */
                 if (!empty($conf['password'])) {
@@ -27,6 +58,26 @@ class ssdbService {
                 $this->link[$k] = $con;
             }
         }
+    }
+
+    /**
+     * 检查驱动是否可用
+     * @return boolean      是否可用
+     */
+    public function is_available() {
+        if (!$this->isConnected && $this->reConnected < $this->maxReConnected) {
+
+            $this->connect();
+
+            if (!$this->isConnected) {
+                $this->reConnected++;
+            }
+            //如果重连成功,重连次数置为0
+            else {
+                $this->reConnected = 0;
+            }
+        }
+        return $this->isConnected;
     }
 
     private function _getConForKey($key) {
@@ -38,6 +89,15 @@ class ssdbService {
             return $this->link[$hashCode % $ns];
         }
         return false;
+    }
+
+    /**
+     * 处理异常信息
+     * @param \Exception $ex
+     */
+    public function exception($ex) {
+        $msg = 'Message:' . $ex->getMessage() . "\nTrace:" . $ex->getTraceAsString();
+        Log::write($msg, Log::EMERG);
     }
 
     /**
@@ -71,10 +131,13 @@ class ssdbService {
      *      出错则返回 false, 其它值表示正常.
      */
     public function set($k, $v) {
-        /* 编码 */
-        $v = json_encode($v, JSON_UNESCAPED_UNICODE);
+        if ($this->is_available()) {
+            /* 编码 */
+            $v = json_encode($v, JSON_UNESCAPED_UNICODE);
 
-        return $this->_getConForKey($k)->set($k, $v);
+            return $this->_getConForKey($k)->set($k, $v);
+        }
+        return false;
     }
 
     /**
@@ -85,14 +148,17 @@ class ssdbService {
      * @return 出错则返回 false, 其它值表示正常.
      */
     public function setx($k, $v, $ttl) {
-        /* 编码 */
-        $v = json_encode($v, JSON_UNESCAPED_UNICODE);
+        if ($this->is_available()) {
+            /* 编码 */
+            $v = json_encode($v, JSON_UNESCAPED_UNICODE);
 
-        if (empty($ttl)) {
-            return $this->_getConForKey($k)->set($k, $v);
-        } else {
-            return $this->_getConForKey($k)->setx($k, $v, $ttl);
+            if (empty($ttl)) {
+                return $this->_getConForKey($k)->set($k, $v);
+            } else {
+                return $this->_getConForKey($k)->setx($k, $v, $ttl);
+            }
         }
+        return false;
     }
 
     /**
@@ -102,10 +168,13 @@ class ssdbService {
      * @return  出错则返回 false, 1: value 已经设置, 0: key 已经存在, 不更新.
      */
     public function setnx($k, $v) {
-        /* 编码 */
-        $v = json_encode($v, JSON_UNESCAPED_UNICODE);
+        if ($this->is_available()) {
+            /* 编码 */
+            $v = json_encode($v, JSON_UNESCAPED_UNICODE);
 
-        return $this->_getConForKey($k)->setnx($k, $v);
+            return $this->_getConForKey($k)->setnx($k, $v);
+        }
+        return false;
     }
 
     /**
@@ -115,7 +184,10 @@ class ssdbService {
      * @return type
      */
     public function expire($k, $ttl) {
-        return $this->_getConForKey($k)->expire($k, $ttl);
+        if ($this->is_available()) {
+            return $this->_getConForKey($k)->expire($k, $ttl);
+        }
+        return false;
     }
 
     /**
@@ -124,7 +196,10 @@ class ssdbService {
      * @return type
      */
     public function ttl($k) {
-        return $this->_getConForKey($k)->ttl($k);
+        if ($this->is_available()) {
+            return $this->_getConForKey($k)->ttl($k);
+        }
+        return false;
     }
 
     /**
@@ -135,14 +210,15 @@ class ssdbService {
      *      如果 key 不存在则返回 null, 如果出错则返回 false, 否则返回 key 对应的值内容.
      */
     public function get($k) {
-
-        $v = $this->_getConForKey($k)->get($k);
-        if (empty($v)) {
-            return false;
+        if ($this->is_available()) {
+            $v = $this->_getConForKey($k)->get($k);
+            if (empty($v)) {
+                return false;
+            }
+            /* 自动解码 */
+            return json_decode($v, true);
         }
-
-        /* 自动解码 */
-        return json_decode($v, true);
+        return false;
     }
 
     /**
@@ -154,7 +230,10 @@ class ssdbService {
      *      如果 key 不存在则返回 null, 如果出错则返回 false, 否则返回 key 对应的值内容.
      */
     public function getset($k, $v) {
-        return $this->_getConForKey($k)->getset($k, $v);
+        if ($this->is_available()) {
+            return $this->_getConForKey($k)->getset($k, $v);
+        }
+        return false;
     }
 
     /**
@@ -165,7 +244,10 @@ class ssdbService {
      *      如果出错则返回 false, 其它值表示正常. 你无法通过返回值来判断被删除的 key 是否存在.
      */
     public function del($k) {
-        return $this->_getConForKey($k)->del($k);
+        if ($this->is_available()) {
+            return $this->_getConForKey($k)->del($k);
+        }
+        return false;
     }
 
     /**
@@ -177,8 +259,11 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回新的值.
      */
     public function incr($k, $v) {
-        $v = intval($v);
-        return $this->_getConForKey($k)->incr($k, $v);
+        if ($this->is_available()) {
+            $v = intval($v);
+            return $this->_getConForKey($k)->incr($k, $v);
+        }
+        return false;
     }
 
     /**
@@ -189,7 +274,10 @@ class ssdbService {
      *      如果存在, 返回 true, 否则返回 false.
      */
     public function exists($k) {
-        return $this->_getConForKey($k)->exists($k);
+        if ($this->is_available()) {
+            return $this->_getConForKey($k)->exists($k);
+        }
+        return false;
     }
 
     /**
@@ -203,7 +291,10 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回包含 key 的数组.
      */
     public function keys($key_start, $key_end, $limit) {
-        return $this->_getConForKey($key_start)->keys($key_start, $key_end, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($key_start)->keys($key_start, $key_end, $limit);
+        }
+        return false;
     }
 
     /**
@@ -217,7 +308,10 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回包含 key-value 的数关联组.
      */
     public function scan($key_start, $key_end, $limit) {
-        return $this->_getConForKey($key_start)->scan($key_start, $key_end, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($key_start)->scan($key_start, $key_end, $limit);
+        }
+        return false;
     }
 
     /**
@@ -231,7 +325,10 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回包含 key-value 的数关联组.
      */
     public function rscan($key_start, $key_end, $limit) {
-        return $this->_getConForKey($key_start)->rscan($key_start, $key_end, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($key_start)->rscan($key_start, $key_end, $limit);
+        }
+        return false;
     }
 
     /**
@@ -244,7 +341,10 @@ class ssdbService {
      *      出错则返回 false, 其它值表示正常.
      */
     public function hset($name, $k, $v) {
-        return $this->_getConForKey($name)->hset($name, $k, $v);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->hset($name, $k, $v);
+        }
+        return false;
     }
 
     /**
@@ -256,7 +356,10 @@ class ssdbService {
      *      如果 key 不存在则返回 null, 如果出错则返回 false, 否则返回 key 对应的值内容.
      */
     public function hget($name, $k) {
-        return $this->_getConForKey($name)->hget($name, $k);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->hget($name, $k);
+        }
+        return false;
     }
 
     /**
@@ -268,7 +371,10 @@ class ssdbService {
      *      如果出错则返回 false, 其它值表示正常. 你无法通过返回值来判断被删除的 key 是否存在.
      */
     public function hdel($name, $k) {
-        return $this->_getConForKey($name)->hdel($name, $k);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->hdel($name, $k);
+        }
+        return false;
     }
 
     /**
@@ -281,8 +387,11 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回新的值.
      */
     public function hincr($name, $k, $v) {
-        $v = intval($v);
-        return $this->_getConForKey($name)->hincr($name, $k, $v);
+        if ($this->is_available()) {
+            $v = intval($v);
+            return $this->_getConForKey($name)->hincr($name, $k, $v);
+        }
+        return false;
     }
 
     /**
@@ -294,7 +403,10 @@ class ssdbService {
      *      如果存在, 返回 true, 否则返回 false.
      */
     public function hexists($name, $k) {
-        return $this->_getConForKey($name)->hexists($name, $k);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->hexists($name, $k);
+        }
+        return false;
     }
 
     /**
@@ -305,7 +417,10 @@ class ssdbService {
      *      出错则返回 false, 否则返回元素的个数, 0 表示不存在 hashmap(空).
      */
     public function hsize($name) {
-        return $this->_getConForKey($name)->hsize($name);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->hsize($name);
+        }
+        return false;
     }
 
     /**
@@ -320,11 +435,17 @@ class ssdbService {
      *      出错则返回 false, 返回返回包含名字的数组.
      */
     public function hlist($name_start, $name_end, $limit) {
-        return $this->_getConForKey($name_start)->hlist($name_start, $name_end, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name_start)->hlist($name_start, $name_end, $limit);
+        }
+        return false;
     }
 
     public function hrlist($name_start, $name_end, $limit) {
-        return $this->_getConForKey($name_start)->hrlist($name_start, $name_end, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name_start)->hrlist($name_start, $name_end, $limit);
+        }
+        return false;
     }
 
     /**
@@ -339,7 +460,10 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回包含 key 的数组.
      */
     public function hkeys($name, $key_start, $key_end, $limit) {
-        return $this->_getConForKey($name)->hkeys($name, $key_start, $key_end, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->hkeys($name, $key_start, $key_end, $limit);
+        }
+        return false;
     }
 
     /**
@@ -350,7 +474,10 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回包含 key-value 的关联数组.
      */
     public function hgetall($name) {
-        return $this->_getConForKey($name)->hgetall($name);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->hgetall($name);
+        }
+        return false;
     }
 
     /**
@@ -365,14 +492,20 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回包含 key-value 的关联数组.
      */
     public function hscan($name, $key_start, $key_end, $limit) {
-        return $this->_getConForKey($name)->hscan($name, $key_start, $key_end, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->hscan($name, $key_start, $key_end, $limit);
+        }
+        return false;
     }
 
     /**
      * 列出 hashmap 中处于区间 (key_start, key_end] 的 key-value 列表, 反向顺序.
      */
     public function hrscan($name, $key_start, $key_end, $limit) {
-        return $this->_getConForKey($name)->hrscan($name, $key_start, $key_end, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->hrscan($name, $key_start, $key_end, $limit);
+        }
+        return false;
     }
 
     /**
@@ -383,7 +516,10 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回删除的 key 的数量.
      */
     public function hclear($name) {
-        return $this->_getConForKey($name)->hclear($name);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->hclear($name);
+        }
+        return false;
     }
 
     /**
@@ -395,7 +531,10 @@ class ssdbService {
      *        出错则返回 false, 其它值表示正常.
      */
     public function multi_hset($name, $kvs) {
-        return $this->_getConForKey($name)->multi_hset($name, $kvs);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->multi_hset($name, $kvs);
+        }
+        return false;
     }
 
     /**
@@ -407,7 +546,10 @@ class ssdbService {
      *        如果出错则返回 false, 否则返回包含 key-value 的关联数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
      */
     public function multi_hget($name, $keys) {
-        return $this->_getConForKey($name)->multi_hget($name, $keys);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->multi_hget($name, $keys);
+        }
+        return false;
     }
 
     /**
@@ -419,7 +561,10 @@ class ssdbService {
      *      出错则返回 false, 其它值表示正常.
      */
     public function multi_hdel($name, $keys) {
-        return $this->_getConForKey($name)->multi_hdel($name, $keys);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->multi_hdel($name, $keys);
+        }
+        return false;
     }
 
     /**
@@ -432,8 +577,11 @@ class ssdbService {
      *      出错则返回 false, 其它值表示正常.
      */
     public function zset($name, $k, $v) {
-        $v = intval($v);
-        return $this->_getConForKey($name)->zset($name, $k, $v);
+        if ($this->is_available()) {
+            $v = intval($v);
+            return $this->_getConForKey($name)->zset($name, $k, $v);
+        }
+        return false;
     }
 
     /**
@@ -445,7 +593,10 @@ class ssdbService {
      *       如果 key 不存在则返回 null, 如果出错则返回 false, 否则返回 key 对应的权重值.
      */
     public function zget($name, $k) {
-        return $this->_getConForKey($name)->zget($name, $k);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zget($name, $k);
+        }
+        return false;
     }
 
     /**
@@ -457,7 +608,10 @@ class ssdbService {
      *        如果出错则返回 false, 其它值表示正常. 你无法通过返回值来判断被删除的 key 是否存在.
      */
     public function zdel($name, $k) {
-        return $this->_getConForKey($name)->zdel($name, $k);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zdel($name, $k);
+        }
+        return false;
     }
 
     /**
@@ -470,8 +624,11 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回新的值.
      */
     public function zincr($name, $k, $v) {
-        $v = intval($v);
-        return $this->_getConForKey($name)->zincr($name, $k, $v);
+        if ($this->is_available()) {
+            $v = intval($v);
+            return $this->_getConForKey($name)->zincr($name, $k, $v);
+        }
+        return false;
     }
 
     /**
@@ -483,7 +640,10 @@ class ssdbService {
      *      如果存在, 返回 true, 否则返回 false.
      */
     public function zexists($name, $k) {
-        return $this->_getConForKey($name)->zexists($name, $k);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zexists($name, $k);
+        }
+        return false;
     }
 
     /**
@@ -494,7 +654,10 @@ class ssdbService {
      *       出错则返回 false, 否则返回元素的个数, 0 表示不存在 zset(空).
      */
     public function zsize($name) {
-        return $this->_getConForKey($name)->zsize($name);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zsize($name);
+        }
+        return false;
     }
 
     /**
@@ -509,11 +672,17 @@ class ssdbService {
      *       出错则返回 false, 否则返回包含名字的数组.
      */
     public function zlist($name_start, $name_end, $limit) {
-        return $this->_getConForKey($name_start)->zlist($name_start, $name_end, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name_start)->zlist($name_start, $name_end, $limit);
+        }
+        return false;
     }
 
     public function zrlist($name_start, $name_end, $limit) {
-        return $this->_getConForKey($name_start)->zrlist($name_start, $name_end, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name_start)->zrlist($name_start, $name_end, $limit);
+        }
+        return false;
     }
 
     /**
@@ -528,7 +697,10 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回包含 key 的数组.
      */
     public function zkeys($name, $key_start, $score_start, $score_end, $limit) {
-        return $this->_getConForKey($name)->zkeys($name, $key_start, $score_start, $score_end, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zkeys($name, $key_start, $score_start, $score_end, $limit);
+        }
+        return false;
     }
 
     /**
@@ -545,14 +717,20 @@ class ssdbService {
      *        如果出错则返回 false, 否则返回包含 key-score 的关联数组.
      */
     public function zscan($name, $key_start, $score_start, $score_end, $limit) {
-        return $this->_getConForKey($name)->zscan($name, $key_start, $score_start, $score_end, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zscan($name, $key_start, $score_start, $score_end, $limit);
+        }
+        return false;
     }
 
     /**
      * 列出 zset 中的 key-score 列表, 反向顺序. 参见 zkeys().
      */
     public function zrscan($name, $key_start, $score_start, $score_end, $limit) {
-        return $this->_getConForKey($name)->zrscan($name, $key_start, $score_start, $score_end, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zrscan($name, $key_start, $score_start, $score_end, $limit);
+        }
+        return false;
     }
 
     /**
@@ -567,11 +745,17 @@ class ssdbService {
      * 出错则返回 false, -1 表示 key 不存在于 zset, 否则返回排名.
      */
     public function zrank($name, $k) {
-        return $this->_getConForKey($name)->zrank($name, $k);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zrank($name, $k);
+        }
+        return false;
     }
 
     public function zrrank($name, $k) {
-        return $this->_getConForKey($name)->zrrank($name, $k);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zrrank($name, $k);
+        }
+        return false;
     }
 
     /**
@@ -586,11 +770,17 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回包含 key-score 的关联数组.
      */
     public function zrange($name, $offset, $limit) {
-        return $this->_getConForKey($name)->zrange($name, $offset, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zrange($name, $offset, $limit);
+        }
+        return false;
     }
 
     public function zrrange($name, $offset, $limit) {
-        return $this->_getConForKey($name)->zrrange($name, $offset, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zrrange($name, $offset, $limit);
+        }
+        return false;
     }
 
     /**
@@ -601,7 +791,10 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回删除的 key 的数量.
      */
     public function zclear($name) {
-        return $this->_getConForKey($name)->zclear($name);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zclear($name);
+        }
+        return false;
     }
 
     /**
@@ -615,7 +808,10 @@ class ssdbService {
      *       如果出错则返回 false, 否则返回符合条件的 key 的数量.
      */
     public function zcount($name, $score_start, $score_end) {
-        return $this->_getConForKey($name)->zcount($name, $score_start, $score_end);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zcount($name, $score_start, $score_end);
+        }
+        return false;
     }
 
     /**
@@ -628,7 +824,10 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回符合条件的 score 的求和.
      */
     public function zsum($name, $score_start, $score_end) {
-        return $this->_getConForKey($name)->zsum($name, $score_start, $score_end);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zsum($name, $score_start, $score_end);
+        }
+        return false;
     }
 
     /**
@@ -641,7 +840,10 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回符合条件的 score 的平均值.
      */
     public function zavg($name, $score_start, $score_end) {
-        return $this->_getConForKey($name)->zavg($name, $score_start, $score_end);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zavg($name, $score_start, $score_end);
+        }
+        return false;
     }
 
     /**
@@ -654,7 +856,10 @@ class ssdbService {
      *      出错则返回 false, 否则返回被删除的元素个数.
      */
     public function zremrangebyrank($name, $start, $end) {
-        return $this->_getConForKey($name)->zremrangebyrank($name, $start, $end);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zremrangebyrank($name, $start, $end);
+        }
+        return false;
     }
 
     /**
@@ -667,7 +872,10 @@ class ssdbService {
      *      出错则返回 false, 否则返回被删除的元素个数.
      */
     public function zremrangebyscore($name, $score_start, $score_end) {
-        return $this->_getConForKey($name)->zremrangebyscore($name, $score_start, $score_end);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zremrangebyscore($name, $score_start, $score_end);
+        }
+        return false;
     }
 
     /**
@@ -679,7 +887,10 @@ class ssdbService {
      * 如果出错则返回 false, 否则返回包含 key-score 的关联数组.
      */
     public function zpop_front($name, $limit) {
-        return $this->_getConForKey($name)->zpop_front($name, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zpop_front($name, $limit);
+        }
+        return false;
     }
 
     /**
@@ -691,7 +902,10 @@ class ssdbService {
      * 如果出错则返回 false, 否则返回包含 key-score 的关联数组.
      */
     public function zpop_back($name, $limit) {
-        return $this->_getConForKey($name)->zpop_front($name, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zpop_front($name, $limit);
+        }
+        return false;
     }
 
     /**
@@ -703,7 +917,10 @@ class ssdbService {
      *      出错则返回 false, 其它值表示正常.
      */
     public function multi_zset($name, $kvs) {
-        return $this->_getConForKey($name)->multi_zset($name, $kvs);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->multi_zset($name, $kvs);
+        }
+        return false;
     }
 
     /**
@@ -715,7 +932,10 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回包含 key-score 的关联数组, 如果某个 key 不存在, 则它不会出现在返回数组中.
      */
     public function multi_zget($name, $keys) {
-        return $this->_getConForKey($name)->multi_zget($name, $keys);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->multi_zget($name, $keys);
+        }
+        return false;
     }
 
     /**
@@ -727,7 +947,10 @@ class ssdbService {
      *      出错则返回 false, 其它值表示正常.
      */
     public function multi_zdel($name, $keys) {
-        return $this->_getConForKey($name)->multi_zdel($name, $keys);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->multi_zdel($name, $keys);
+        }
+        return false;
     }
 
     /**
@@ -738,7 +961,10 @@ class ssdbService {
      *  出错返回 false, 否则返回一个整数, 0 表示队列不存在(或者为空).
      */
     public function qsize($name) {
-        return $this->_getConForKey($name)->qsize($name);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qsize($name);
+        }
+        return false;
     }
 
     /**
@@ -753,11 +979,17 @@ class ssdbService {
      *      出错则返回 false, 返回返回包含名字的数组.
      */
     public function qlist($name_start, $name_end, $limit) {
-        return $this->_getConForKey($name_start)->qlist($name_start, $name_end, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name_start)->qlist($name_start, $name_end, $limit);
+        }
+        return false;
     }
 
     public function qrlist($name_start, $name_end, $limit) {
-        return $this->_getConForKey($name_start)->qrlist($name_start, $name_end, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name_start)->qrlist($name_start, $name_end, $limit);
+        }
+        return false;
     }
 
     /**
@@ -768,7 +1000,10 @@ class ssdbService {
      *      出错返回 false.
      */
     public function qclear($name) {
-        return $this->_getConForKey($name)->qclear($name);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qclear($name);
+        }
+        return false;
     }
 
     /**
@@ -779,7 +1014,10 @@ class ssdbService {
      *      出错返回 false, 队列不存在(或者为空)则返回 null, 否则返回一个元素.
      */
     public function qfront($name) {
-        return $this->_getConForKey($name)->qfront($name);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qfront($name);
+        }
+        return false;
     }
 
     /**
@@ -791,7 +1029,10 @@ class ssdbService {
      *      出错返回 false, 队列不存在(或者为空)则返回 null, 否则返回一个元素.
      */
     public function qback($name) {
-        return $this->_getConForKey($name)->qback($name);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qback($name);
+        }
+        return false;
     }
 
     /**
@@ -804,7 +1045,10 @@ class ssdbService {
      *          出错返回 false, 如果指定位置不存在一个元素, 则返回 null, 否则返回一个元素.
      */
     public function qget($name, $index) {
-        return $this->_getConForKey($name)->qget($name, $index);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qget($name, $index);
+        }
+        return false;
     }
 
     /**
@@ -817,7 +1061,10 @@ class ssdbService {
      *      出错则返回 false, 其它值表示正常.
      */
     public function qset($name, $index, $val) {
-        return $this->_getConForKey($name)->qset($name, $index, $val);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qset($name, $index, $val);
+        }
+        return false;
     }
 
     /**
@@ -830,7 +1077,10 @@ class ssdbService {
      *      如果出错则返回 false, 否则返回数组.
      */
     public function qrange($name, $offset, $limit) {
-        return $this->_getConForKey($name)->qrange($name, $offset, $limit);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qrange($name, $offset, $limit);
+        }
+        return false;
     }
 
     /**
@@ -843,14 +1093,20 @@ class ssdbService {
      *       出错返回 false, 否则返回包含元素的数组.
      */
     public function qslice($name, $begin, $end) {
-        return $this->_getConForKey($name)->qslice($name, $begin, $end);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qslice($name, $begin, $end);
+        }
+        return false;
     }
 
     /**
      * 本函数是 qpush_back() 的别名.
      */
     public function qpush($name, $v) {
-        return $this->_getConForKey($name)->qpush_front($name, $v);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qpush_front($name, $v);
+        }
+        return false;
     }
 
     /**
@@ -862,7 +1118,10 @@ class ssdbService {
      *        添加元素之后, 队列的长度, 出错返回 false.
      */
     public function qpush_front($name, $item) {
-        return $this->_getConForKey($name)->qpush_front($name, $item);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qpush_front($name, $item);
+        }
+        return false;
     }
 
     /**
@@ -874,14 +1133,20 @@ class ssdbService {
      *       添加元素之后, 队列的长度, 出错返回 false.
      */
     public function qpush_back($name, $item) {
-        return $this->_getConForKey($name)->qpush_back($name, $item);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qpush_back($name, $item);
+        }
+        return false;
     }
 
     /**
      * 本函数是 qpop_front() 的别名.
      */
     public function qpop($name) {
-        return $this->_getConForKey($name)->qpop_back($name, 1);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qpop_back($name, 1);
+        }
+        return false;
     }
 
     /**
@@ -893,7 +1158,10 @@ class ssdbService {
      *       出错返回 false. 当 size 未指定或者小于等于 1 时, 队列不存在(或者为空)则返回 null, 否则删除并返回一个元素. 当 size 大于等于 2 时, 返回一个数组包含弹出的元素.
      */
     public function qpop_front($name, $size = 1) {
-        return $this->_getConForKey($name)->qpop_back($name, $size);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qpop_back($name, $size);
+        }
+        return false;
     }
 
     /**
@@ -906,7 +1174,10 @@ class ssdbService {
      *      出错返回 false. 当 size 未指定或者小于等于 1 时, 队列不存在(或者为空)则返回 null, 否则删除并返回一个元素. 当 size 大于等于 2 时, 返回一个数组包含弹出的元素.
      */
     public function qpop_back($name, $size = 1) {
-        return $this->_getConForKey($name)->qpop_back($name, $size);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qpop_back($name, $size);
+        }
+        return false;
     }
 
     /**
@@ -919,7 +1190,10 @@ class ssdbService {
      *       出错返回 false. 返回被删除的元素数量.
      */
     public function qtrim_front($name, $size) {
-        return $this->_getConForKey($name)->qtrim_front($name, $size);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qtrim_front($name, $size);
+        }
+        return false;
     }
 
     /**
@@ -932,14 +1206,22 @@ class ssdbService {
      *      出错返回 false. 返回被删除的元素数量.
      */
     public function qtrim_back($name, $size) {
-        return $this->_getConForKey($name)->qtrim_back($name, $size);
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->qtrim_back($name, $size);
+        }
+        return false;
     }
 
+    /**
+     * 清理 zhash
+     * @param type $zname
+     * @return boolean
+     */
     public function multi_zscan_del($zname) {
         $key_start = '';
         $score_start = '';
         while (1) {
-            $items = $this->_getConForKey($name)->zscan($zname, $key_start, $score_start, '', 100);
+            $items = $this->_getConForKey($zname)->zscan($zname, $key_start, $score_start, '', 100);
             if (!$items) {
                 break;
             }
@@ -947,25 +1229,33 @@ class ssdbService {
                 $key_start = $key;
                 $score_start = $score;
 
-                $this->_getConForKey($name)->zdel($zname, $key);
+                $this->_getConForKey($zname)->zdel($zname, $key);
             }
         }
         return true;
     }
 
+    /**
+     * 清理 hash
+     * @param type $hname
+     * @return boolean
+     */
     public function multi_hscan_del($hname) {
-        $key_start = '';
-        while (1) {
-            $items = $this->_getConForKey($name)->hscan($hname, $key_start, '', 100);
-            if (!$items) {
-                break;
+        if ($this->is_available()) {
+            $key_start = '';
+            while (1) {
+                $items = $this->_getConForKey($hname)->hscan($hname, $key_start, '', 100);
+                if (!$items) {
+                    break;
+                }
+                foreach ($items as $key => $score) {
+                    $key_start = $key;
+                    $this->_getConForKey($hname)->hdel($hname, $key);
+                }
             }
-            foreach ($items as $key => $score) {
-                $key_start = $key;
-                $this->_getConForKey($name)->hdel($hname, $key);
-            }
+            return true;
         }
-        return true;
+        return false;
     }
 
     /**
@@ -973,14 +1263,20 @@ class ssdbService {
      * 关闭连接
      */
     public function __destruct() {
-        $result = false;
-        for ($i = 0; $i < count($this->link); $i++) {
-            if ($this->link[$i]->close())
-                $result = true;
+        $max_i = count($this->link);
+        for ($i = 0; $i < $max_i; $i++) {
+            $this->link[$i]->close();
         }
-        return $result;
+        unset($this->link);
+        unset($this->isConnected);
     }
 
+    /**
+     * 　单实例化
+     * @staticvar array $obj
+     * @param type $conf_name
+     * @return \self
+     */
     public static function getInstance($conf_name = 'ssdb_cache') {
         static $obj = [];
         if (!isset($obj[$conf_name])) {

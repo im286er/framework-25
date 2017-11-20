@@ -25,7 +25,7 @@ abstract class Action {
      */
     public function __construct() {
         //实例化视图类
-        $this->view = view::getInstance();
+        $this->view = View::getInstance();
         //控制器初始化
         if (method_exists($this, '_initialize')) {
             $this->_initialize();
@@ -130,10 +130,6 @@ abstract class Action {
                 // 返回JSON数据格式到客户端 包含状态信息
                 header('Content-Type:application/json; charset=utf-8');
                 exit(json_encode($data, JSON_UNESCAPED_UNICODE));
-            case 'XML' :
-                // 返回xml格式数据
-                header('Content-Type:text/xml; charset=utf-8');
-                exit(xml_encode($data));
             case 'JSONP':
                 // 返回JSON数据格式到客户端 包含状态信息
                 header('Content-Type:application/json; charset=utf-8');

@@ -1,25 +1,39 @@
 <?php
 
 /**
- * 框架入口
+ * 框架启动
  */
-/* 取得当前网站所在的根目录 */
-defined('ROOT_PATH') or define('ROOT_PATH', str_replace('framework', '', __DIR__));
-
 /* 基本方法 */
-require( __DIR__ . '/function.php' );
+require( FRAMEWORK_PATH . '/function.php' );
 /* 核心框架 */
-require( __DIR__ . '/Config.class.php' );
-require( __DIR__ . '/Log.class.php' );
-require (__DIR__ . '/Loader.class.php');
-require( __DIR__ . '/App.class.php' );
-require( __DIR__ . '/Dispatcher.class.php' );
-require( __DIR__ . '/Route.class.php' );
+require( FRAMEWORK_PATH . '/Config.class.php' );
+require( FRAMEWORK_PATH . '/Log.class.php' );
+require (FRAMEWORK_PATH . '/Loader.class.php');
+require( FRAMEWORK_PATH . '/App.class.php' );
+require( FRAMEWORK_PATH . '/Dispatcher.class.php' );
+require( FRAMEWORK_PATH . '/Route.class.php' );
 
-/* 其他方法 */
-require(__DIR__ . '/helpers/lib_common.php');
+/* 加载公共方法 */
+require_cache(APP_PATH . 'common/function.php');
 
 /* 引入站点配置文件 */
 Config::load(ROOT_PATH . 'data/config.php');
 
-/* 引入站点语言包 */
+/* 应用类库命名空间 */
+Loader::addNamespace(
+        [
+            'api' => APP_PATH . 'api/',
+            'common' => APP_PATH . 'common/',
+            'admin' => APP_PATH . 'admin/',
+        ]
+);
+
+/* 设置 session 配置 */
+if (Config::get('memcached_cache')) {
+    ini_set("session.save_handler", "memcache");
+    ini_set("session.gc_maxlifetime", "28800"); // 8 小时
+    foreach (Config::get('memcached_cache') as $key => $conf) {
+        ini_set("session.save_path", "tcp://{$conf['host']}:{$conf['port']}");
+    }
+    unset($conf);
+}

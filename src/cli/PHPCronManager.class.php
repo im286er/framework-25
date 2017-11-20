@@ -63,7 +63,10 @@ class PHPCronManager {
     private $worker_processes = 2;
 
     private function __construct() {
-
+        /* Reset opcache. */
+        if (function_exists('opcache_reset')) {
+            opcache_reset();
+        }
     }
 
     public static function main() {
@@ -84,22 +87,22 @@ class PHPCronManager {
         switch ($argv[2]) {
             case 'start':
                 if ($this->checkMasterRunning()) {
-                    print_error(PHPCronManager::processName . ' 已经在运行');
+                    CliHelper::print_error(PHPCronManager::processName . ' 已经在运行');
                     return false;
                 }
-                print_line(PHPCronManager::processName . " 开始启动");
+                CliHelper::print_line(PHPCronManager::processName . " 开始启动");
                 $this->bootstrap();
                 break;
             case 'stop':
                 if (!$this->checkMasterRunning()) {
-                    print_error(PHPCronManager::processName . ' 还未启动');
+                    CliHelper::print_error(PHPCronManager::processName . ' 还未启动');
                     return false;
                 }
                 $this->stop();
                 break;
             case 'restart':
                 if (!$this->checkMasterRunning()) {
-                    print_error(PHPCronManager::processName . ' 还未启动');
+                    CliHelper::print_error(PHPCronManager::processName . ' 还未启动');
                     return false;
                 }
                 $this->restart();
@@ -108,9 +111,9 @@ class PHPCronManager {
             case 'status':
                 $pid = $this->getPid();
                 if ($pid) {
-                    print_ok("Daemon #{$pid} is running");
+                    CliHelper::print_ok("Daemon #{$pid} is running");
                 } else {
-                    print_error("Daemon is not running");
+                    CliHelper::print_error("Daemon is not running");
                 }
                 break;
         }
@@ -136,7 +139,7 @@ class PHPCronManager {
         \Log::write('开始初始化待执行任务', Log::INFO);
 
         /* 获取要执行的任务 */
-        $config_tasks = C('config_tasks');
+        $config_tasks = Config::get('config_tasks');
 
         foreach ($config_tasks as $uuid => $taskConfig) {
 
@@ -387,7 +390,7 @@ class PHPCron_Worker {
     private $running = false;
 
     public function __construct() {
-
+        
     }
 
     public function setPPId($ppid) {

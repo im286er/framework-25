@@ -44,6 +44,11 @@ class phpcron extends EventEmitter {
      */
     public function __construct(array $options = array()) {
 
+        /* Reset opcache. */
+        if (function_exists('opcache_reset')) {
+            opcache_reset();
+        }
+
         $this->options = $options + $this->options;
 
         $this->pidFile = '/tmp/' . get_class($this) . '.pid';
@@ -136,7 +141,7 @@ class phpcron extends EventEmitter {
      * @return int
      */
     protected function daemon() {
-        print_line("开始将Master进程设置为Daemon模式");
+        CliHelper::print_line("开始将Master进程设置为Daemon模式");
 
         //step1 让 daemon 进程在子进程中执行
         $pid = pcntl_fork();
@@ -172,7 +177,7 @@ class phpcron extends EventEmitter {
         //step6 重设 daemon 进程的文件创建掩码
         umask(0);
 
-        print_line("Master进入Daemon模式");
+        CliHelper::print_line("Master进入Daemon模式");
 
         return posix_getpid();
     }
@@ -202,24 +207,24 @@ class phpcron extends EventEmitter {
         $this->emit('run');
 
         if ($pid = $this->getPid()) {
-            print_error(get_class($this) . " Daemon #{$pid} has already started");
+            CliHelper::print_error(get_class($this) . " Daemon #{$pid} has already started");
             return false;
         }
 
         $this->pid = $this->daemon();
 
         if ($this->pid < 0) {
-            print_error('设置进程为守护进程失败');
+            CliHelper::print_error('设置进程为守护进程失败');
             exit(1);
         }
 
         /* 写入 pid */
         if ($this->writePid() == false) {
-            print_error("写主进程PID文件失败，PID文件: {$this->pidFile}");
+            CliHelper::print_error("写主进程PID文件失败，PID文件: {$this->pidFile}");
             exit(1);
         }
 
-        print_ok("{$this->pid}　运行成功！");
+        CliHelper::print_ok("{$this->pid}　运行成功！");
 
         while (true) {
 

@@ -30,7 +30,7 @@ abstract class Widget {
             // 自动定位模板文件
             $name = substr(get_class($this), 0, -6);
             $filename = empty($templateFile) ? $name : $templateFile;
-            $templateFile = C('template_dir') . 'widget/' . $filename . '.tpl.php';
+            $templateFile = Config::get('template_dir') . 'widget/' . $filename . '.tpl.php';
             if (!is_file($templateFile)) {
                 throw new Exception(' template not exist [' . $templateFile . ']');
             }

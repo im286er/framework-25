@@ -1,7 +1,5 @@
 <?php
 
-namespace Framework;
-
 /**
  * 路由解析类
  */
@@ -12,21 +10,24 @@ class Route {
      */
     public static function routerCheck() {
         $regx = trim($_SERVER['PATH_INFO'], '/');
+
         if (empty($regx)) {
             return false;
         }
         /* URL映射定义（静态路由） */
-        $maps = C('URL_MAP_RULES');
+        $maps = Config::get('URL_MAP_RULES');
         if (isset($maps[$regx])) {
             $var = self::parseUrl($maps[$regx]);
             $_GET = array_merge($var, $_GET);
             return true;
         }
         /* 路由处理 */
-        $routes = C('routes');
+        $routes = Config::get('routes');
+
         if (empty($routes)) {
             return false;
         }
+
         foreach ($routes as $rule => $route) {
             if (0 === strpos($rule, '/') && preg_match($rule, $regx, $matches)) {
                 /* 正则路由 */
@@ -35,6 +36,7 @@ class Route {
                 /* 规则路由 */
                 $len1 = substr_count($regx, '/');
                 $len2 = substr_count($rule, '/');
+                
                 if ($len1 >= $len2 || strpos($rule, '[')) {
                     if ('$' == substr($rule, -1, 1)) {
                         /* 完整匹配 */
@@ -51,6 +53,7 @@ class Route {
                 }
             }
         }
+        return false;
     }
 
     /**

@@ -1,5 +1,4 @@
 <?php
-namespace Framework;
 
 class App {
 
@@ -7,14 +6,9 @@ class App {
      * 应用程序初始化
      */
     static public function init() {
-        /* 对用户传入的变量进行转义操作。 */
-        $_GET = transcribe($_GET);
-        $_POST = transcribe($_POST);
-        $_COOKIE = transcribe($_COOKIE);
-        $_REQUEST = transcribe($_REQUEST);
-
-        /* 注册自动加载 */
-        Loader::register();
+        /* 开始时间与内存 */
+        define('START_TIME', microtime(true));
+        define('START_MEM', memory_get_usage());
 
         /* 异常处理类 */
         set_exception_handler(['App', 'exception_handle']);
@@ -26,13 +20,18 @@ class App {
 
         /* 定义时间戳 */
         define('TIMESTAMP', time());
-        define('START_TIME', microtime(true));
-        define('START_MEM', memory_get_usage());
+
+        /* 对用户传入的变量进行转义操作。 */
+        $_GET = transcribe($_GET);
+        $_POST = transcribe($_POST);
+        $_COOKIE = transcribe($_COOKIE);
+        $_REQUEST = transcribe($_REQUEST);
+
+        /* 注册自动加载 */
+        Loader::register();
 
         //URL调度
         Dispatcher::dispatch();
-
-        return;
     }
 
     public static function error_handle($errno, $errstr, $errfile, $errline) {
@@ -57,7 +56,6 @@ class App {
         // true 表示不执行 PHP 内部错误处理程序, false 表示执行PHP默认处理
         //return DEBUG ? FALSE : TRUE;
         // 判断错误级别，决定是否退出。
-
 
         switch ($errno) {
             case E_ERROR:
@@ -84,14 +82,13 @@ class App {
                 break;
             case E_NOTICE:
                 // 抛出异常，记录到日志
-                $errnostr = isset($errortype[$errno]) ? $errortype[$errno] : 'Unknonw';
-                $s = "[$errnostr] : $errstr in File $errfile, Line: $errline";
-                Log::write($s, Log::NOTICE);
+//                $errnostr = isset($errortype[$errno]) ? $errortype[$errno] : 'Unknonw';
+//                $s = "[$errnostr] : $errstr in File $errfile, Line: $errline";
+//                Log::write($s, Log::NOTICE);
                 break;
             default:
                 break;
         }
-        return false;
     }
 
     public static function exception_handle($e) {
@@ -109,7 +106,6 @@ class App {
      * @return void
      */
     static public function exec() {
-
         $class_name = MODULE_NAME . "Action";
         $action = ACTION_NAME;
 
@@ -119,7 +115,7 @@ class App {
                 $class_name = '_emptyAction';
             } else {
                 if (Request::getInstance()->isAjax() == true) {
-                    $json = ['ret' => 404, 'data' => null, 'msg' => 'Controller 不存在!'];
+                    $json = ['ret' => 404, 'data' => null, 'msg' => 'Action 不存在!'];
                     ajax_return($json);
                 } else {
                     // 显示 404 错误
@@ -136,7 +132,7 @@ class App {
                 // 显示 404 错误
                 if (Request::getInstance()->isAjax() == true) {
                     Log::write("{$module}-{$action}\t不存在！");
-                    $json = ['ret' => 404, 'data' => null, 'msg' => 'Action 不存在!'];
+                    $json = ['ret' => 404, 'data' => null, 'msg' => "{$module}-{$action} 不存在!"];
                     ajax_return($json);
                 } else {
                     // 显示 404 错误

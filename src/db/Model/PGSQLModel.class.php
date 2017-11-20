@@ -200,7 +200,7 @@ class PGSQLModel {
 
     // 写入数据前的回调方法 包括新增和更新
     protected function _before_write(&$data) {
-
+        
     }
 
     /**
@@ -255,12 +255,12 @@ class PGSQLModel {
 
     // 插入数据前的回调方法
     protected function _before_insert(&$data, $options) {
-
+        
     }
 
     // 插入成功后的回调方法
     protected function _after_insert($data, $options) {
-
+        
     }
 
     /**
@@ -336,12 +336,12 @@ class PGSQLModel {
 
     // 更新数据前的回调方法
     protected function _before_update(&$data, $options) {
-
+        
     }
 
     // 更新成功后的回调方法
     protected function _after_update($data, $options) {
-
+        
     }
 
     /**
@@ -414,12 +414,12 @@ class PGSQLModel {
 
     // 删除数据前的回调方法
     protected function _before_delete($options) {
-
+        
     }
 
     // 删除成功后的回调方法
     protected function _after_delete($data, $options) {
-
+        
     }
 
     /**
@@ -495,7 +495,7 @@ class PGSQLModel {
 
     // 查询成功后的回调方法
     protected function _after_select(&$resultSet, $options) {
-
+        
     }
 
     /**
@@ -550,7 +550,7 @@ class PGSQLModel {
 
     // 表达式过滤回调方法
     protected function _options_filter(&$options) {
-
+        
     }
 
     /**
@@ -651,7 +651,7 @@ class PGSQLModel {
 
     // 查询成功的回调方法
     protected function _after_find(&$result, $options) {
-
+        
     }
 
     /**

@@ -43,6 +43,11 @@ abstract class Daemon {
             throw new \Exception('This Application must be started with cli mode.');
         }
 
+        /* Reset opcache. */
+        if (function_exists('opcache_reset')) {
+            opcache_reset();
+        }
+
         global $argv;
 
         $defaults = [
@@ -111,12 +116,12 @@ abstract class Daemon {
      */
     public function start() {
         $msg = get_class($this) . " Starting daemon...";
-        print_line($msg);
+        CliHelper::print_line($msg);
 
         $this->_daemonize();
 
         $msg = get_class($this) . " Daemon #" . $this->pid() . " is running";
-        print_ok($msg);
+        CliHelper::print_ok($msg);
 
         declare(ticks = 1) {
             while (!$this->_exit) {
@@ -130,7 +135,7 @@ abstract class Daemon {
                 } catch (Exception $e) {
                     $msg = get_class($this) . ' ' . $e->getMessage();
                     Log::write($msg);
-                    print_error($msg);
+                    CliHelper::print_error($msg);
                 }
             }
         }
@@ -143,7 +148,7 @@ abstract class Daemon {
     public function stop() {
         if (!$pid = $this->pid()) {
             $msg = get_class($this) . " Daemon is not running\n";
-            print_error($msg);
+            CliHelper::print_error($msg);
             return false;
         }
 
@@ -151,7 +156,7 @@ abstract class Daemon {
         // 强制杀死进程
         posix_kill($pid, 9);
 
-        print_ok('操作成功');
+        CliHelper::print_ok('操作成功');
     }
 
     /**
@@ -160,7 +165,7 @@ abstract class Daemon {
      */
     public function restart() {
         if (!$pid = $this->pid()) {
-            print_error('Daemon is not running');
+            CliHelper::print_error('Daemon is not running');
         } else {
             posix_kill($pid, SIGHUP);
         }
@@ -172,9 +177,9 @@ abstract class Daemon {
      */
     public function status() {
         if ($pid = $this->pid()) {
-            print_ok("Daemon #{$pid} is running");
+            CliHelper::print_ok("Daemon #{$pid} is running");
         } else {
-            print_error("Daemon is not running");
+            CliHelper::print_error("Daemon is not running");
         }
     }
 
@@ -183,7 +188,7 @@ abstract class Daemon {
      *
      */
     public function help() {
-        print_line($this->_options['help']);
+        CliHelper::print_line($this->_options['help']);
     }
 
     /**
@@ -249,23 +254,23 @@ abstract class Daemon {
      */
     protected function _check() {
         if ($pid = $this->pid()) {
-            print_error(get_class($this) . " Daemon #{$pid} has already started");
+            CliHelper::print_error(get_class($this) . " Daemon #{$pid} has already started");
             return false;
         }
 
         $dir = dirname($this->_options['pid']);
         if (!is_writable($dir)) {
-            print_error("you do not have permission to write pid file @ {$dir}");
+            CliHelper::print_error("you do not have permission to write pid file @ {$dir}");
             return false;
         }
 
         if (!defined('SIGHUP')) {
-            print_error("PHP is compiled without --enable-pcntl directive");
+            CliHelper::print_error("PHP is compiled without --enable-pcntl directive");
             return false;
         }
 
         if (!function_exists('posix_getpid')) {
-            print_error("PHP is compiled without --enable-posix directive");
+            CliHelper::print_error("PHP is compiled without --enable-posix directive");
             return false;
         }
 
@@ -315,14 +320,14 @@ abstract class Daemon {
      */
     protected function _stop() {
         if (!is_writeable($this->_options['pid'])) {
-            print_error(get_class($this) . " Daemon (no pid file) not running");
+            CliHelper::print_error(get_class($this) . " Daemon (no pid file) not running");
             return false;
         }
 
         $pid = $this->pid();
         unlink($this->_options['pid']);
 
-        print_ok(get_class($this) . " Daemon #{$pid} has stopped");
+        CliHelper::print_ok(get_class($this) . " Daemon #{$pid} has stopped");
 
         $this->_exit = true;
     }
@@ -335,7 +340,7 @@ abstract class Daemon {
         global $argv;
         $this->_stop();
 
-        print_ok(get_class($this) . " Daemon is restarting...");
+        CliHelper::print_ok(get_class($this) . " Daemon is restarting...");
 
         $cmd = $_SERVER['_'] . ' ' . implode(' ', $argv);
         $cmd = trim($cmd, ' > /dev/null 2>&1 &') . ' > /dev/null 2>&1 &';

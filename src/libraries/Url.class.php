@@ -42,10 +42,10 @@ class Url {
             $domain = $host . (strpos($host, '.') ? '' : strstr($_SERVER['HTTP_HOST'], '.'));
         } elseif ($domain === true) {
             $domain = $_SERVER['HTTP_HOST'];
-            if (C('APP_SUB_DOMAIN_DEPLOY')) { // 开启子域名部署
+            if (Config::get('APP_SUB_DOMAIN_DEPLOY')) { // 开启子域名部署
                 $domain = $domain == 'localhost' ? 'localhost' : 'www' . strstr($_SERVER['HTTP_HOST'], '.');
                 // '子域名'=>array('项目[/分组]');
-                foreach (C('APP_SUB_DOMAIN_RULES') as $key => $rule) {
+                foreach (Config::get('APP_SUB_DOMAIN_RULES') as $key => $rule) {
                     if (false === strpos($key, '*') && 0 === strpos($url, $rule[0])) {
                         $domain = $key . strstr($domain, '.'); // 生成对应子域名
                         $url = substr_replace($url, '', 0, strlen($rule[0]));
@@ -86,7 +86,7 @@ class Url {
                 $var['a'] = !empty($path) ? array_pop($path) : ACTION_NAME;
                 $var['c'] = !empty($path) ? array_pop($path) : MODULE_NAME;
 
-                if (!C('APP_SUB_DOMAIN_DEPLOY')) {
+                if (!Config::get('APP_SUB_DOMAIN_DEPLOY')) {
                     if (!empty($path)) {
                         $group = array_pop($path);
                         $var['app'] = $group;

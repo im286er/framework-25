@@ -16,7 +16,7 @@ class Cache {
         ini_set('memcache.hash_function', 'crc32');
         ini_set('memcache.hash_strategy', 'consistent');
 
-        $this->conf = C('memcached_cache');
+        $this->conf = Config::get('memcached_cache');
         if (empty($this->conf)) {
             throw new Exception('请配置 memcache !');
         }

@@ -16,8 +16,7 @@
     },
     "autoload": {
 	     "files": [
-            "src/function.php",
-            "src/helpers/lib_common.php"
+
         ],
         "psr-4": {
             "framework\\": "src/"

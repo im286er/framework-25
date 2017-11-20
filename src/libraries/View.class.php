@@ -3,7 +3,7 @@
 /**
  *  简单展示模板类
  */
-class view {
+class View {
 
     // 模板赋值
     public $_var = [];
@@ -11,7 +11,7 @@ class view {
     public $template_dir;
 
     public function __construct() {
-        $this->template_dir = C('template_dir');
+        $this->template_dir = Config::get('template_dir');
     }
 
     public function fetch($tpl, $dir = null) {

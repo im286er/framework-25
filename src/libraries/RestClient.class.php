@@ -357,7 +357,7 @@ class RestClient {
     }
 
     public function initialize($config) {
-        $this->rest_server = empty($config['server']) ? C('api_site_url') : $config['server'];
+        $this->rest_server = empty($config['server']) ? Config::get('api_site_url') : $config['server'];
 
         if (substr($this->rest_server, -1, 1) != '/') {
             $this->rest_server .= '/';
@@ -595,19 +595,33 @@ class RestClient {
         $request_ua = UserAgentFactory::analyze($ua);
 
         $data = [
-            "app_key" => C('app_key'),
+            "app_key" => Config::get('app_key'),
             "timestamp" => time(),
-            "noncestr" => Text::randString(12),
+            "noncestr" => $this->randString(12),
             "os" => $request_ua->os['title'],
             "browser" => $request_ua->browser['title'],
         ];
 
         return [
-            "app_id" => C('app_id'),
+            "app_id" => Config::get('app_id'),
             "noncestr" => $data['noncestr'],
             "timestamp" => $data['timestamp'],
             "signature" => $this->getSignature($data, 'sha1'),
         ];
+    }
+
+    /**
+     * 产生随机字串
+     * @param type $len
+     * @return type
+     */
+    private function randString($len = 6) {
+        $chars = 'ABCDEFGHIJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+        if ($len > 10) { // 位数过长重复字符串一定次数
+            $chars = str_repeat($chars, 5);
+        }
+        $chars = str_shuffle($chars);
+        return substr($chars, 0, $len);
     }
 
 }

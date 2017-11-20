@@ -1,5 +1,4 @@
 <?php
-namespace Framework;
 
 /**
  * 调度
@@ -25,23 +24,21 @@ class Dispatcher {
         }
 
         /*  子域名部署 */
-        if (C('APP_SUB_DOMAIN_DEPLOY') && (php_sapi_name() != "cli")) {
-            $rules = C('APP_SUB_DOMAIN_RULES');
+        if (Config::get('APP_SUB_DOMAIN_DEPLOY') && (php_sapi_name() != "cli")) {
+            $rules = Config::get('APP_SUB_DOMAIN_RULES');
             /* 完整域名或者IP配置 */
             if (isset($rules[$_SERVER['HTTP_HOST']])) {
                 /* 当前完整域名 */
-                define('APP_DOMAIN', $_SERVER['HTTP_HOST']);
-                $rule = $rules[APP_DOMAIN];
+                $rule = $rules[$_SERVER['HTTP_HOST']];
             } else {
-                if (strpos(C('APP_DOMAIN_SUFFIX'), '.')) { // com.cn net.cn
+                if (strpos(Config::get('APP_DOMAIN_SUFFIX'), '.')) { // com.cn net.cn
                     $domain = array_slice(explode('.', $_SERVER['HTTP_HOST']), 0, -3);
                 } else {
                     $domain = array_slice(explode('.', $_SERVER['HTTP_HOST']), 0, -2);
                 }
                 if (!empty($domain)) {
-                    $subDomain = implode('.', $domain);
                     /* 当前完整子域名 */
-                    define('SUB_DOMAIN', $subDomain);
+                    $subDomain = implode('.', $domain);
                     /* 二级域名 */
                     $domain2 = array_pop($domain);
                     /* 存在三级域名 */
@@ -93,13 +90,26 @@ class Dispatcher {
             Config::load(APP_PATH . GROUP_NAME . '/routes.php');
         }
 
+        if (php_sapi_name() === "cli") {
+            /* 默认规则调度URL */
+            $paths = explode('/', trim($_SERVER['PATH_INFO'], '/'));
+            $app = $paths[0] ? array_shift($paths) : 'www';
+            $app = strtolower($app);
+
+            /* 定义分组应用 */
+            define('GROUP_NAME', $app);
+            /* 载入应用路由 */
+            Config::load(APP_PATH . $app . '/routes.php');
+        }
+
         // URL后缀
         define('__EXT__', strtolower(pathinfo($_SERVER['PATH_INFO'], PATHINFO_EXTENSION)));
         // 去除URL后缀
-        $_SERVER['PATH_INFO'] = preg_replace(C('URL_HTML_SUFFIX') ? '/\.(' . trim(C('URL_HTML_SUFFIX'), '.') . ')$/i' : '/\.' . __EXT__ . '$/i', '', $_SERVER['PATH_INFO']);
+        $_SERVER['PATH_INFO'] = preg_replace(Config::get('URL_HTML_SUFFIX') ? '/\.(' . trim(Config::get('URL_HTML_SUFFIX'), '.') . ')$/i' : '/\.' . __EXT__ . '$/i', '', $_SERVER['PATH_INFO']);
 
         // 检测路由规则 如果没有则按默认规则调度URL
         if (!Route::routerCheck()) {
+            /* 默认规则调度URL */
             $paths = explode('/', trim($_SERVER['PATH_INFO'], '/'));
             $var = [];
             if (!isset($_GET['app'])) {
@@ -127,13 +137,12 @@ class Dispatcher {
             define('GROUP_NAME', strtolower($_GET['app']));
         }
 
-        /* 加载公共方法 */
+        /* 加载应用公共方法 */
         require_cache(APP_PATH . GROUP_NAME . '/function.php');
 
         /* 引入应用配置文件 */
         Config::load(APP_PATH . GROUP_NAME . '/config.php');
 
-        /* 安全检测 */
         if (empty($_GET['c'])) {
             $_GET['c'] = 'default';
         }
