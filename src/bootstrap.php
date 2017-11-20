@@ -2,6 +2,7 @@
 
 /**
  * 框架启动
+ * bootstrap.php 样例
  */
 /* 基本方法 */
 require( FRAMEWORK_PATH . '/function.php' );
