@@ -1,5 +1,7 @@
 <?php
 
+namespace framework\libraries;
+
 /**
  * jwt 令牌
  */
