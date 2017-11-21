@@ -90,13 +90,18 @@ class Dispatcher {
             define('GROUP_NAME', strtolower($_GET['app']));
             /* 载入应用路由 */
             Config::load(APP_PATH . GROUP_NAME . '/routes.php');
-        }
-
-        if (php_sapi_name() === "cli") {
+        } else {
+            /* 不是域名部署 */
             /* 默认规则调度URL */
             $paths = explode('/', trim($_SERVER['PATH_INFO'], '/'));
-            $app = $paths[0] ? array_shift($paths) : 'www';
-            $app = strtolower($app);
+
+            if (Config::get('APP_GROUP_LIST') && !isset($_GET['app'])) {
+                $app = in_array(strtolower($paths[0]), explode(',', strtolower(Config::get('APP_GROUP_LIST')))) ? array_shift($paths) : 'www';
+                if (Config::get('APP_GROUP_DENY') && in_array(strtolower($app), explode(',', strtolower(Config::get('APP_GROUP_DENY'))))) {
+                    // 禁止直接访问分组
+                    exit;
+                }
+            }
 
             /* 定义分组应用 */
             define('GROUP_NAME', $app);
@@ -115,7 +120,7 @@ class Dispatcher {
             $paths = explode('/', trim($_SERVER['PATH_INFO'], '/'));
             $var = [];
             if (Config::get('APP_GROUP_LIST') && !isset($_GET['app'])) {
-                $var['app'] = in_array(strtolower($paths[0]), explode(',', strtolower(Config::get('APP_GROUP_LIST')))) ? array_shift($paths) : '';
+                $var['app'] = in_array(strtolower($paths[0]), explode(',', strtolower(Config::get('APP_GROUP_LIST')))) ? array_shift($paths) : 'www';
                 if (Config::get('APP_GROUP_DENY') && in_array(strtolower($var['app']), explode(',', strtolower(Config::get('APP_GROUP_DENY'))))) {
                     // 禁止直接访问分组
                     exit;
@@ -132,11 +137,6 @@ class Dispatcher {
             }, implode('/', $paths));
 
             $_GET = array_merge($var, $_GET);
-        }
-
-        /* 没有开始子部署 检查转入是否合法 */
-        if (empty($_GET['app']) || preg_match('/^[A-Za-z](\/|\w)*$/', $_GET['app']) == false) {
-            $_GET['app'] = 'www';
         }
 
         if (!defined('GROUP_NAME')) {
