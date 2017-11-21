@@ -114,9 +114,12 @@ class Dispatcher {
             /* 默认规则调度URL */
             $paths = explode('/', trim($_SERVER['PATH_INFO'], '/'));
             $var = [];
-            if (!isset($_GET['app'])) {
-                $var['app'] = $paths[0] ? array_shift($paths) : 'www';
-                $var['app'] = strtolower($var['app']);
+            if (Config::get('APP_GROUP_LIST') && !isset($_GET['app'])) {
+                $var['app'] = in_array(strtolower($paths[0]), explode(',', strtolower(Config::get('APP_GROUP_LIST')))) ? array_shift($paths) : '';
+                if (Config::get('APP_GROUP_DENY') && in_array(strtolower($var['app']), explode(',', strtolower(Config::get('APP_GROUP_DENY'))))) {
+                    // 禁止直接访问分组
+                    exit;
+                }
             }
             if (!isset($_GET['c'])) {
                 /* 还没有定义模块名称 */
@@ -127,6 +130,7 @@ class Dispatcher {
             preg_replace_callback('/(\w+)\/([^\/]+)/', function($match) use(&$var) {
                 $var[$match[1]] = strip_tags($match[2]);
             }, implode('/', $paths));
+
             $_GET = array_merge($var, $_GET);
         }
 

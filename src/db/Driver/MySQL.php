@@ -6,7 +6,7 @@ namespace framework\db\Driver;
  * mysql数据库驱动
  */
 class Mysql extends DbDriver {
-
+    
     // PDO连接参数
     protected $options = [
         PDO::ATTR_CASE => PDO::CASE_LOWER,
@@ -15,7 +15,7 @@ class Mysql extends DbDriver {
         PDO::ATTR_STRINGIFY_FETCHES => false,
         PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8';",
     ];
-
+    
     public static function getInstance($db = 'mysql') {
         static $obj = [];
         if (!isset($obj[$db])) {

@@ -2,6 +2,8 @@
 
 namespace framework\libraries;
 
+use framework\core\Config;
+
 /**
  *  简单展示模板类
  */

@@ -9,9 +9,9 @@
  */
 function C($name = '', $value = null, $range = '') {
     if (is_null($value) && is_string($name)) {
-        return Config::get($name, $range);
+        return \framework\core\Config::get($name, $range);
     } else {
-        return Config::set($name, $value, $range);
+        return \framework\core\Config::set($name, $value, $range);
     }
 }
 

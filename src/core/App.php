@@ -2,8 +2,6 @@
 
 namespace framework\core;
 
-use framework\libraries\Request;
-
 class App {
 
     /**
@@ -25,6 +23,17 @@ class App {
         /* 定义时间戳 */
         define('TIMESTAMP', time());
 
+        /* 设置 session 配置 */
+        if (Config::get('memcached_cache')) {
+            ini_set("session.save_handler", "memcache");
+            ini_set("session.gc_maxlifetime", "28800"); // 8 小时
+            $save_path = "";
+            foreach (Config::get('memcached_cache') as $key => $conf) {
+                $save_path = empty($save_path) ? "tcp://{$conf['host']}:{$conf['port']}" : $save_path . ",tcp://{$conf['host']}:{$conf['port']}";
+            }
+            ini_set("session.save_path", $save_path);
+        }
+
         /* 注册自动加载 */
         Loader::register();
 
@@ -32,6 +41,14 @@ class App {
         Dispatcher::dispatch();
     }
 
+    /**
+     * 出错处理
+     * @param type $errno
+     * @param type $errstr
+     * @param type $errfile
+     * @param type $errline
+     * @throws \Exception
+     */
     public static function error_handle($errno, $errstr, $errfile, $errline) {
         $errortype = [
             E_ERROR => 'Error',
@@ -51,8 +68,6 @@ class App {
             E_RECOVERABLE_ERROR => 'Catchable Fatal Error',
         ];
 
-        // true 表示不执行 PHP 内部错误处理程序, false 表示执行PHP默认处理
-        //return DEBUG ? FALSE : TRUE;
         // 判断错误级别，决定是否退出。
 
         switch ($errno) {
@@ -66,20 +81,18 @@ class App {
                 $s = "[$errnostr] : $errstr in File $errfile, Line: $errline";
                 Log::write($s, Log::EMERG);
 
-                if (Request::getInstance()->isAjax() == true) {
-                    ob_clean();
-                    $json = ['ret' => 500, 'data' => null, 'msg' => "500 Internal Server Error {$errno} {$s} "];
-                    ajax_return($json);
-                }
+                ob_clean();
+                $json = ['ret' => 500, 'data' => null, 'msg' => "500 Internal Server Error {$errno} {$s} "];
+                ajax_return($json);
                 break;
             case E_WARNING:
-                // 抛出异常，记录到日志
+                // 记录到日志
                 $errnostr = isset($errortype[$errno]) ? $errortype[$errno] : 'Unknonw';
                 $s = "[$errnostr] : $errstr in File $errfile, Line: $errline";
                 Log::write($s, Log::WARN);
                 break;
             case E_NOTICE:
-                // 抛出异常，记录到日志
+                // 记录到日志
 //                $errnostr = isset($errortype[$errno]) ? $errortype[$errno] : 'Unknonw';
 //                $s = "[$errnostr] : $errstr in File $errfile, Line: $errline";
 //                Log::write($s, Log::NOTICE);
@@ -89,13 +102,17 @@ class App {
         }
     }
 
+    /**
+     * 异常处理
+     * @param type $e
+     * @throws \Exception
+     */
     public static function exception_handle($e) {
-        Log::write($e->getMessage() . ' File: ' . $e->getFile() . ' [' . $e->getLine() . ']', Log::EMERG);
+        $msg = $e->getMessage() . ' File: ' . $e->getFile() . ' [' . $e->getLine() . ']';
+        Log::write($msg, Log::EMERG);
 
-        if (Request::getInstance()->isAjax() == true) {
-            $json = ['ret' => 500, 'data' => null, 'msg' => $e->getMessage()];
-            ajax_return($json);
-        }
+        $json = ['ret' => 500, 'data' => null, 'msg' => $msg];
+        ajax_return($json);
     }
 
     /**
@@ -108,67 +125,42 @@ class App {
         $action = ACTION_NAME;
 
         if (!class_exists($class_name)) {
-            if (class_exists('_emptyAction')) {
-                // 如果定义了_empty操作 则调用
-                $class_name = '_emptyAction';
-            } else {
-                if (Request::getInstance()->isAjax() == true) {
+            /* 重试一次命名空间 */
+            $class_name = GROUP_NAME . "\\action\\" . MODULE_NAME . 'Action';
+            if (!class_exists($class_name)) {
+                if (class_exists('_emptyAction')) {
+                    /* 如果定义了_empty操作 则调用 */
+                    $class_name = '_emptyAction';
+                } else {
                     $json = ['ret' => 404, 'data' => null, 'msg' => 'Action 不存在!'];
                     ajax_return($json);
-                } else {
-                    // 显示 404 错误
-                    http_response_code(404);
-                    exit();
                 }
             }
         }
+
         $module = new $class_name;
         if (!is_callable([$module, $action])) {
             if (is_callable([$module, '_empty'])) {
                 $action = '_empty';
             } else {
-                // 显示 404 错误
-                if (Request::getInstance()->isAjax() == true) {
-                    Log::write("{$module}-{$action}\t不存在！");
-                    $json = ['ret' => 404, 'data' => null, 'msg' => "{$module}-{$action} 不存在!"];
-                    ajax_return($json);
-                } else {
-                    // 显示 404 错误
-                    http_response_code(404);
-                    exit();
-                }
+                $json = ['ret' => 404, 'data' => null, 'msg' => "{$module}-{$action} 不存在!"];
+                ajax_return($json);
             }
         }
 
         try {
-            //执行当前操作
+            /* 执行当前操作 */
             $method = new \ReflectionMethod($module, $action);
             if ($method->isPublic()) {
                 $class = new \ReflectionClass($module);
-                // 前置操作
-                if ($class->hasMethod('_before_' . $action)) {
-                    $before = $class->getMethod('_before_' . $action);
-                    if ($before->isPublic()) {
-                        $before->invoke($module);
-                    }
-                }
                 $method->invoke($module);
-                // 后置操作
-                if ($class->hasMethod('_after_' . $action)) {
-                    $after = $class->getMethod('_after_' . $action);
-                    if ($after->isPublic()) {
-                        $after->invoke($module);
-                    }
-                }
             } else {
-                // 操作方法不是Public 抛出异常
+                /* 操作方法不是Public 抛出异常 */
                 throw new \ReflectionException();
             }
         } catch (\ReflectionException $e) {
-            if (Request::getInstance()->isAjax() == true) {
-                $json = ['ret' => 500, 'data' => null, 'msg' => $e->getTraceAsString()];
-                ajax_return($json);
-            }
+            $json = ['ret' => 500, 'data' => null, 'msg' => $e->getTraceAsString()];
+            ajax_return($json);
         }
         return;
     }
