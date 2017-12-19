@@ -208,7 +208,7 @@ class MSSQLModel {
         } elseif (isset($this->_scope[$method])) {// 命名范围的单独调用支持
             return $this->scope($method, $args[0]);
         } else {
-            throw new Exception(__CLASS__ . ':' . $method . '方法不存在！', 0);
+            throw new \Exception(__CLASS__ . ':' . $method . '方法不存在！', 0);
             return;
         }
     }
@@ -234,7 +234,7 @@ class MSSQLModel {
             foreach ($data as $key => $val) {
                 if (!in_array($key, $fields, true)) {
                     if (!empty($this->options['strict'])) {
-                        throw new Exception('非法数据对象！' . ':[' . $key . '=>' . $val . ']', 0);
+                        throw new \Exception('非法数据对象！' . ':[' . $key . '=>' . $val . ']', 0);
                     }
                     unset($data[$key]);
                 } elseif (is_scalar($val)) {
@@ -532,7 +532,7 @@ class MSSQLModel {
                     }
                 } elseif (!is_numeric($key) && '_' != substr($key, 0, 1) && false === strpos($key, '.') && false === strpos($key, '(') && false === strpos($key, '|') && false === strpos($key, '&')) {
                     if (!empty($this->options['strict'])) {
-                        throw new Exception('错误的查询条件:[' . $key . '=>' . $val . ']', 0);
+                        throw new \Exception('错误的查询条件:[' . $key . '=>' . $val . ']', 0);
                     }
                     unset($options['where'][$key]);
                 }
@@ -946,7 +946,7 @@ class MSSQLModel {
         } elseif (is_string($data)) {
             parse_str($data, $data);
         } elseif (!is_array($data)) {
-            throw new Exception('非法数据对象！', 0);
+            throw new \Exception('非法数据对象！', 0);
         }
         $this->data = $data;
         return $this;
@@ -1028,7 +1028,7 @@ class MSSQLModel {
                 $options = $union;
             }
         } else {
-            throw new Exception('非法数据对象！', 0);
+            throw new \Exception('非法数据对象！', 0);
         }
         $this->options['union'][] = $options;
         return $this;

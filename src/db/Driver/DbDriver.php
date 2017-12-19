@@ -587,7 +587,7 @@ abstract class DbDriver {
                     $data = is_string($val[1]) ? explode(',', $val[1]) : $val[1];
                     $whereStr .= $key . ' ' . $this->exp[$exp] . ' ' . $this->parseValue($data[0]) . ' AND ' . $this->parseValue($data[1]);
                 } else {
-                    throw new Exception('where express error:' . $val[0]);
+                    throw new \Exception('where express error:' . $val[0]);
                 }
             } else {
                 $count = count($val);

@@ -167,7 +167,7 @@ class SSDB {
             $this->async_auth_password = null;
             $auth = $this->__call('auth', array($pass));
             if ($auth !== true) {
-                throw new Exception("Authentication failed");
+                throw new \Exception("Authentication failed");
             }
         }
 
@@ -192,7 +192,7 @@ class SSDB {
 
         if ($resp->code == 'noauth') {
             $msg = $resp->message;
-            throw new Exception($msg);
+            throw new \Exception($msg);
         }
 
         $resp = $this->check_easy_resp($cmd, $resp);

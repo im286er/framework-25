@@ -149,7 +149,7 @@ class Response {
      */
     public function setStatus($status) {
         if (!is_int($status) || !static::getMessageForCode($status)) {
-            throw new Exception('Invalid HTTP status code');
+            throw new \Exception('Invalid HTTP status code');
         }
 
         $this->status = (int) $status;
