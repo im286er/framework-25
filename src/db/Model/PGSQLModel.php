@@ -2,6 +2,8 @@
 
 namespace framework\db\Model;
 
+use framework\db\Driver\PGSQL;
+
 /**
  * PGSQL Model模型类
  */
@@ -26,15 +28,15 @@ class PGSQLModel {
     // 数据库字段缓存
     protected $db_fields_cache = true;
     // 字段信息
-    protected $fields = array();
+    protected $fields = [];
     // 数据信息
-    protected $data = array();
+    protected $data = [];
     // 查询表达式参数
-    protected $options = array();
-    protected $_map = array();  // 字段映射定义
-    protected $_scope = array();  // 命名范围定义
+    protected $options = [];
+    protected $_map = [];  // 字段映射定义
+    protected $_scope = [];  // 命名范围定义
     // 链操作方法列表
-    protected $methods = array('strict', 'order', 'alias', 'having', 'group', 'lock', 'distinct', 'auto', 'filter', 'result', 'index', 'force');
+    protected $methods = ['strict', 'order', 'alias', 'having', 'group', 'lock', 'distinct', 'auto', 'filter', 'result', 'index', 'force'];
 
     /**
      * 设置自增序列名
@@ -138,7 +140,7 @@ class PGSQLModel {
             // 连贯操作的实现
             $this->options[strtolower($method)] = $args[0];
             return $this;
-        } elseif (in_array(strtolower($method), array('count', 'sum', 'min', 'max', 'avg'), true)) {
+        } elseif (in_array(strtolower($method), ['count', 'sum', 'min', 'max', 'avg'], true)) {
             // 统计查询的实现
             $field = isset($args[0]) ? $args[0] : '*';
             return $this->getField(strtoupper($method) . '(' . $field . ') AS tp_' . $method);
@@ -155,7 +157,7 @@ class PGSQLModel {
         } elseif (isset($this->_scope[$method])) {// 命名范围的单独调用支持
             return $this->scope($method, $args[0]);
         } else {
-            throw new Exception(__CLASS__ . ':' . $method . L('_METHOD_NOT_EXIST_'), 0);
+            throw new Exception(__CLASS__ . ':' . $method . '方法不存在！', 0);
             return;
         }
     }
@@ -181,7 +183,7 @@ class PGSQLModel {
             foreach ($data as $key => $val) {
                 if (!in_array($key, $fields, true)) {
                     if (!empty($this->options['strict'])) {
-                        throw new Exception(L('_DATA_TYPE_INVALID_') . ':[' . $key . '=>' . $val . ']', 0);
+                        throw new Exception('非法数据对象！' . ':[' . $key . '=>' . $val . ']', 0);
                     }
                     unset($data[$key]);
                 } elseif (is_scalar($val)) {
@@ -196,13 +198,8 @@ class PGSQLModel {
             $data = array_map($this->options['filter'], $data);
             unset($this->options['filter']);
         }
-        $this->_before_write($data);
-        return $data;
-    }
 
-    // 写入数据前的回调方法 包括新增和更新
-    protected function _before_write(&$data) {
-        
+        return $data;
     }
 
     /**
@@ -213,15 +210,15 @@ class PGSQLModel {
      * @param boolean $replace 是否replace
      * @return mixed
      */
-    public function add($data = '', $options = array(), $replace = false) {
+    public function add($data = '', $options = [], $replace = false) {
         if (empty($data)) {
             // 没有传递数据，获取当前数据对象的值
             if (!empty($this->data)) {
                 $data = $this->data;
                 // 重置数据
-                $this->data = array();
+                $this->data = [];
             } else {
-                $this->error = L('_DATA_TYPE_INVALID_');
+                $this->error = '非法数据对象！';
                 return false;
             }
         }
@@ -229,40 +226,22 @@ class PGSQLModel {
         $data = $this->_facade($data);
         // 分析表达式
         $options = $this->_parseOptions($options);
-        if (false === $this->_before_insert($data, $options)) {
-            return false;
-        }
+
         // 写入数据到数据库
         $result = $this->db->insert($data, $options, $replace);
         if (false !== $result && is_numeric($result)) {
             $pk = $this->getPk();
             // 增加复合主键支持
-            if (is_array($pk))
+            if (is_array($pk)) {
                 return $result;
+            }
             $insertId = $this->getLastInsID();
             if ($insertId) {
                 // 自增主键返回插入ID
-                $data[$pk] = $insertId;
-                if (false === $this->_after_insert($data, $options)) {
-                    return false;
-                }
                 return $insertId;
-            }
-            if (false === $this->_after_insert($data, $options)) {
-                return false;
             }
         }
         return $result;
-    }
-
-    // 插入数据前的回调方法
-    protected function _before_insert(&$data, $options) {
-        
-    }
-
-    // 插入成功后的回调方法
-    protected function _after_insert($data, $options) {
-        
     }
 
     /**
@@ -272,7 +251,7 @@ class PGSQLModel {
      * @param array $options 表达式
      * @return boolean
      */
-    public function save($data = '', $options = array()) {
+    public function save($data = '', $options = []) {
         if (empty($data)) {
             // 没有传递数据，获取当前数据对象的值
             if (!empty($this->data)) {
@@ -280,7 +259,7 @@ class PGSQLModel {
                 // 重置数据
                 $this->data = array();
             } else {
-                $this->error = L('_DATA_TYPE_INVALID_');
+                $this->error = '非法数据对象！';
                 return false;
             }
         }
@@ -288,7 +267,7 @@ class PGSQLModel {
         $data = $this->_facade($data);
         if (empty($data)) {
             // 没有数据则不执行
-            $this->error = L('_DATA_TYPE_INVALID_');
+            $this->error = '非法数据对象！';
             return false;
         }
         // 分析表达式
@@ -306,7 +285,7 @@ class PGSQLModel {
                         $where[$field] = $data[$field];
                     } else {
                         // 如果缺少复合主键数据则不执行
-                        $this->error = L('_OPERATION_WRONG_');
+                        $this->error = '操作出现错误';
                         return false;
                     }
                     unset($data[$field]);
@@ -314,7 +293,7 @@ class PGSQLModel {
             }
             if (!isset($where)) {
                 // 如果没有任何更新条件则不执行
-                $this->error = L('_OPERATION_WRONG_');
+                $this->error = '操作出现错误';
                 return false;
             } else {
                 $options['where'] = $where;
@@ -324,26 +303,8 @@ class PGSQLModel {
         if (is_array($options['where']) && isset($options['where'][$pk])) {
             $pkValue = $options['where'][$pk];
         }
-        if (false === $this->_before_update($data, $options)) {
-            return false;
-        }
-        $result = $this->db->update($data, $options);
-        if (false !== $result && is_numeric($result)) {
-            if (isset($pkValue))
-                $data[$pk] = $pkValue;
-            $this->_after_update($data, $options);
-        }
-        return $result;
-    }
 
-    // 更新数据前的回调方法
-    protected function _before_update(&$data, $options) {
-        
-    }
-
-    // 更新成功后的回调方法
-    protected function _after_update($data, $options) {
-        
+        return $this->db->update($data, $options);
     }
 
     /**
@@ -352,7 +313,7 @@ class PGSQLModel {
      * @param mixed $options 表达式
      * @return mixed
      */
-    public function delete($options = array()) {
+    public function delete($options = []) {
         $pk = $this->getPk();
         if (empty($options) && empty($this->options['where'])) {
             // 如果删除条件为空 则删除当前数据对象所对应的记录
@@ -365,11 +326,11 @@ class PGSQLModel {
         if (is_numeric($options) || is_string($options)) {
             // 根据主键删除记录
             if (strpos($options, ',')) {
-                $where[$pk] = array('IN', $options);
+                $where[$pk] = ['IN', $options];
             } else {
                 $where[$pk] = $options;
             }
-            $options = array();
+            $options = [];
             $options['where'] = $where;
         }
         // 根据复合主键删除记录
@@ -400,28 +361,7 @@ class PGSQLModel {
             $pkValue = $options['where'][$pk];
         }
 
-        if (false === $this->_before_delete($options)) {
-            return false;
-        }
-        $result = $this->db->delete($options);
-        if (false !== $result && is_numeric($result)) {
-            $data = array();
-            if (isset($pkValue))
-                $data[$pk] = $pkValue;
-            $this->_after_delete($data, $options);
-        }
-        // 返回删除记录个数
-        return $result;
-    }
-
-    // 删除数据前的回调方法
-    protected function _before_delete($options) {
-        
-    }
-
-    // 删除成功后的回调方法
-    protected function _after_delete($data, $options) {
-        
+        return $this->db->delete($options);
     }
 
     /**
@@ -430,7 +370,7 @@ class PGSQLModel {
      * @param array $options 表达式参数
      * @return mixed
      */
-    public function select($options = array()) {
+    public function select($options = []) {
         $pk = $this->getPk();
         if (is_string($options) || is_numeric($options)) {
             // 根据主键查询
@@ -439,7 +379,7 @@ class PGSQLModel {
             } else {
                 $where[$pk] = $options;
             }
-            $options = array();
+            $options = [];
             $options['where'] = $where;
         } elseif (is_array($options) && (count($options) > 0) && is_array($pk)) {
             // 根据复合主键查询
@@ -459,7 +399,7 @@ class PGSQLModel {
                 return false;
             }
         } elseif (false === $options) { // 用于子查询 不查询只返回SQL
-            $options = array();
+            $options = [];
             // 分析表达式
             $options = $this->_parseOptions($options);
             return '( ' . $this->fetchSql(true)->select($options) . ' )';
@@ -479,7 +419,6 @@ class PGSQLModel {
         }
 
         $resultSet = array_map(array($this, '_read_data'), $resultSet);
-        $this->_after_select($resultSet, $options);
         if (isset($options['index'])) { // 对数据集进行索引
             $index = explode(',', $options['index']);
             foreach ($resultSet as $result) {
@@ -495,18 +434,13 @@ class PGSQLModel {
         return $resultSet;
     }
 
-    // 查询成功后的回调方法
-    protected function _after_select(&$resultSet, $options) {
-        
-    }
-
     /**
      * 分析表达式
      * @access protected
      * @param array $options 表达式参数
      * @return array
      */
-    protected function _parseOptions($options = array()) {
+    protected function _parseOptions($options = []) {
         if (is_array($options))
             $options = array_merge($this->options, $options);
 
@@ -537,14 +471,14 @@ class PGSQLModel {
                     }
                 } elseif (!is_numeric($key) && '_' != substr($key, 0, 1) && false === strpos($key, '.') && false === strpos($key, '(') && false === strpos($key, '|') && false === strpos($key, '&')) {
                     if (!empty($this->options['strict'])) {
-                        throw new Exception(L('_ERROR_QUERY_EXPRESS_') . ':[' . $key . '=>' . $val . ']', 0);
+                        throw new Exception('错误的查询条件:[' . $key . '=>' . $val . ']', 0);
                     }
                     unset($options['where'][$key]);
                 }
             }
         }
         // 查询过后清空sql表达式组装 避免影响下次查询
-        $this->options = array();
+        $this->options = [];
         // 表达式过滤
         $this->_options_filter($options);
         return $options;
@@ -602,10 +536,10 @@ class PGSQLModel {
      * @param mixed $options 表达式参数
      * @return mixed
      */
-    public function find($options = array()) {
+    public function find($options = []) {
         if (is_numeric($options) || is_string($options)) {
             $where[$this->getPk()] = $options;
-            $options = array();
+            $options = [];
             $options['where'] = $where;
         }
         // 根据复合主键查找记录
@@ -646,14 +580,8 @@ class PGSQLModel {
 
         // 读取数据后的处理
         $data = $this->_read_data($resultSet[0]);
-        $this->_after_find($data, $options);
         $this->data = $data;
         return $this->data;
-    }
-
-    // 查询成功的回调方法
-    protected function _after_find(&$result, $options) {
-        
     }
 
     /**
@@ -692,7 +620,7 @@ class PGSQLModel {
                 $step = '-' . $step;
             }
         }
-        return $this->setField($field, array('exp', $field . '+' . $step));
+        return $this->setField($field, ['exp', $field . '+' . $step]);
     }
 
     /**
@@ -714,7 +642,7 @@ class PGSQLModel {
                 $step = '-' . $step;
             }
         }
-        return $this->setField($field, array('exp', $field . '-' . $step));
+        return $this->setField($field, ['exp', $field . '-' . $step]);
     }
 
     /**
@@ -727,28 +655,28 @@ class PGSQLModel {
      * @return false|integer
      */
     protected function lazyWrite($guid, $step, $lazyTime) {
-        $value = Cache::getInstance()->simple_get($guid);
+        $value = \Cache::getInstance()->simple_get($guid);
         if (false !== $value) {
             // 存在缓存写入数据
-            $lazy_time = Cache::getInstance()->simple_get($guid . '_time');
+            $lazy_time = \Cache::getInstance()->simple_get($guid . '_time');
             $lazyTime = intval($lazy_time) + $lazyTime;
             if (TIMESTAMP > $lazyTime) {
                 // 延时更新时间到了，删除缓存数据 并实际写入数据库
-                Cache::getInstance()->simple_delete($guid);
-                Cache::getInstance()->simple_delete($guid . '_time');
+                \Cache::getInstance()->simple_delete($guid);
+                \Cache::getInstance()->simple_delete($guid . '_time');
 
                 return $value + $step;
             } else {
                 // 追加数据到缓存
-                Cache::getInstance()->simple_set($guid, ($value + $step));
+                \Cache::getInstance()->simple_set($guid, ($value + $step));
 
                 return false;
             }
         } else {
             // 没有缓存数据
-            Cache::getInstance()->simple_set($guid, $step);
+            \Cache::getInstance()->simple_set($guid, $step);
             // 计时开始
-            Cache::getInstance()->simple_set($guid . '_time', TIMESTAMP);
+            \Cache::getInstance()->simple_set($guid . '_time', TIMESTAMP);
 
             return false;
         }
@@ -775,7 +703,7 @@ class PGSQLModel {
                 $field = array_keys($resultSet[0]);
                 $key1 = array_shift($field);
                 $key2 = array_shift($field);
-                $cols = array();
+                $cols = [];
                 $count = count($_field);
                 foreach ($resultSet as $result) {
                     $name = $result[$key1];
@@ -962,7 +890,7 @@ class PGSQLModel {
         } elseif (is_string($data)) {
             parse_str($data, $data);
         } elseif (!is_array($data)) {
-            throw new Exception('_DATA_TYPE_INVALID_', 0);
+            throw new Exception('非法数据对象！', 0);
         }
         $this->data = $data;
         return $this;
@@ -1044,7 +972,7 @@ class PGSQLModel {
                 $options = $union;
             }
         } else {
-            throw new Exception(L('_DATA_TYPE_INVALID_'), 0);
+            throw new Exception('非法数据对象！', 0);
         }
         $this->options['union'][] = $options;
         return $this;
@@ -1089,7 +1017,7 @@ class PGSQLModel {
             }
         } elseif (is_string($scope)) { // 支持多个命名范围调用 用逗号分割
             $scopes = explode(',', $scope);
-            $options = array();
+            $options = [];
             foreach ($scopes as $name) {
                 if (!isset($this->_scope[$name]))
                     continue;
@@ -1127,7 +1055,7 @@ class PGSQLModel {
             $where = get_object_vars($where);
         }
         if (is_string($where) && '' != $where) {
-            $map = array();
+            $map = [];
             $map['_string'] = $where;
             $where = $map;
         }
@@ -1166,7 +1094,7 @@ class PGSQLModel {
         if (is_null($listRows) && strpos($page, ',')) {
             list($page, $listRows) = explode(',', $page);
         }
-        $this->options['page'] = array(intval($page), intval($listRows));
+        $this->options['page'] = [intval($page), intval($listRows)];
         return $this;
     }
 

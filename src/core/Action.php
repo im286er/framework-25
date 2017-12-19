@@ -1,6 +1,6 @@
 <?php
 
-namespace framework\libraries;
+namespace framework\core;
 
 /**
  * 控制器基类 抽象类
@@ -29,8 +29,8 @@ abstract class Action {
         //实例化视图类
         $this->view = View::getInstance();
         //控制器初始化
-        if (method_exists($this, '_initialize')) {
-            $this->_initialize();
+        if (method_exists($this, '__initialize')) {
+            $this->__initialize();
         }
     }
 
@@ -126,7 +126,7 @@ abstract class Action {
      * @param String $type AJAX返回数据格式
      * @return void
      */
-    protected function ajaxReturn($data, $type = 'JSON') {
+    public function ajaxReturn($data, $type = 'JSON') {
         switch (strtoupper($type)) {
             case 'JSON' :
                 // 返回JSON数据格式到客户端 包含状态信息

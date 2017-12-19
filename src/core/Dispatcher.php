@@ -143,14 +143,11 @@ class Dispatcher {
             define('GROUP_NAME', strtolower($_GET['app']));
         }
 
-        /* 加载应用公共方法 */
-        require_cache(APP_PATH . GROUP_NAME . '/function.php');
-
         /* 引入应用配置文件 */
         Config::load(APP_PATH . GROUP_NAME . '/config.php');
 
         if (empty($_GET['c'])) {
-            $_GET['c'] = 'default';
+            $_GET['c'] = 'index';
         }
         if (empty($_GET['a'])) {
             $_GET['a'] = 'index';

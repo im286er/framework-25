@@ -14,10 +14,10 @@ class PGSQL extends DbDriver {
     protected $selectSql = 'SELECT%DISTINCT% %FIELD% FROM %TABLE%%FORCE%%JOIN%%WHERE%%GROUP%%HAVING%%ORDER%%LIMIT% %UNION%%LOCK%%COMMENT%';
     // PDO连接参数
     protected $options = [
-        PDO::ATTR_CASE => PDO::CASE_LOWER,
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_ORACLE_NULLS => PDO::NULL_NATURAL,
-        PDO::ATTR_STRINGIFY_FETCHES => false,
+        \PDO::ATTR_CASE => \PDO::CASE_LOWER,
+        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+        \PDO::ATTR_ORACLE_NULLS => \PDO::NULL_NATURAL,
+        \PDO::ATTR_STRINGIFY_FETCHES => false,
     ];
 
     public static function getInstance($db = 'pgsql') {

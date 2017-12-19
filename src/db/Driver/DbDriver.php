@@ -2,6 +2,9 @@
 
 namespace framework\db\Driver;
 
+use framework\core\Config;
+use framework\core\Log;
+
 /**
  * 数据库驱动
  *
@@ -36,10 +39,10 @@ abstract class DbDriver {
     protected $sequenceName = '';
     // PDO连接参数
     protected $options = [
-        PDO::ATTR_CASE => PDO::CASE_LOWER,
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_ORACLE_NULLS => PDO::NULL_NATURAL,
-        PDO::ATTR_STRINGIFY_FETCHES => false,
+        \PDO::ATTR_CASE => \PDO::CASE_LOWER,
+        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+        \PDO::ATTR_ORACLE_NULLS => \PDO::NULL_NATURAL,
+        \PDO::ATTR_STRINGIFY_FETCHES => false,
     ];
     protected $bind = []; // 参数绑定
 
@@ -293,7 +296,7 @@ abstract class DbDriver {
      */
     private function getResult() {
         //返回数据集
-        $result = $this->PDOStatement->fetchAll(PDO::FETCH_ASSOC);
+        $result = $this->PDOStatement->fetchAll(\PDO::FETCH_ASSOC);
         $this->numRows = count($result);
         return $result;
     }

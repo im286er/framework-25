@@ -23,17 +23,6 @@ class App {
         /* 定义时间戳 */
         define('TIMESTAMP', time());
 
-        /* 设置 session 配置 */
-        if (Config::get('memcached_cache')) {
-            ini_set("session.save_handler", "memcache");
-            ini_set("session.gc_maxlifetime", "28800"); // 8 小时
-            $save_path = "";
-            foreach (Config::get('memcached_cache') as $key => $conf) {
-                $save_path = empty($save_path) ? "tcp://{$conf['host']}:{$conf['port']}" : $save_path . ",tcp://{$conf['host']}:{$conf['port']}";
-            }
-            ini_set("session.save_path", $save_path);
-        }
-
         /* 注册自动加载 */
         Loader::register();
 
@@ -83,7 +72,7 @@ class App {
 
                 ob_clean();
                 $json = ['ret' => 500, 'data' => null, 'msg' => "500 Internal Server Error {$errno} {$s} "];
-                ajax_return($json);
+                self::ajax_return($json);
                 break;
             case E_WARNING:
                 // 记录到日志
@@ -93,9 +82,9 @@ class App {
                 break;
             case E_NOTICE:
                 // 记录到日志
-//                $errnostr = isset($errortype[$errno]) ? $errortype[$errno] : 'Unknonw';
-//                $s = "[$errnostr] : $errstr in File $errfile, Line: $errline";
-//                Log::write($s, Log::NOTICE);
+                $errnostr = isset($errortype[$errno]) ? $errortype[$errno] : 'Unknonw';
+                $s = "[$errnostr] : $errstr in File $errfile, Line: $errline";
+                Log::write($s, Log::NOTICE);
                 break;
             default:
                 break;
@@ -112,7 +101,37 @@ class App {
         Log::write($msg, Log::EMERG);
 
         $json = ['ret' => 500, 'data' => null, 'msg' => $msg];
-        ajax_return($json);
+        self::ajax_return($json);
+    }
+
+    /**
+     * Ajax方式返回数据到客户端
+     *
+     * @access protected
+     * @param mixed $json 要返回的数据
+     * @param String $type AJAX返回数据格式
+     * @return void
+     */
+    static public function ajax_return($json, $type = '') {
+        switch (strtoupper($type)) {
+            case 'JSON' :
+                // 返回JSON数据格式到客户端 包含状态信息
+                header('Content-Type:application/json; charset=utf-8');
+                exit(json_encode($json, JSON_UNESCAPED_UNICODE));
+            case 'JSONP':
+                // 返回JSON数据格式到客户端 包含状态信息
+                header('Content-Type:application/json; charset=utf-8');
+                $callback = get('callback', '', 't');
+                exit($callback . '(' . json_encode($json, JSON_UNESCAPED_UNICODE) . ');');
+            case 'EVAL' :
+                // 返回可执行的js脚本
+                header('Content-Type:text/html; charset=utf-8');
+                exit($json);
+            default :
+                // 用于扩展其他返回格式数据
+                header('Content-Type:application/json; charset=utf-8');
+                exit(json_encode($json, JSON_UNESCAPED_UNICODE));
+        }
     }
 
     /**
@@ -121,20 +140,16 @@ class App {
      * @return void
      */
     static public function exec() {
-        $class_name = MODULE_NAME . "Action";
+        $class_name = GROUP_NAME . "\\action\\" . MODULE_NAME;
         $action = ACTION_NAME;
 
         if (!class_exists($class_name)) {
-            /* 重试一次命名空间 */
-            $class_name = GROUP_NAME . "\\action\\" . MODULE_NAME . 'Action';
-            if (!class_exists($class_name)) {
-                if (class_exists('_emptyAction')) {
-                    /* 如果定义了_empty操作 则调用 */
-                    $class_name = '_emptyAction';
-                } else {
-                    $json = ['ret' => 404, 'data' => null, 'msg' => 'Action 不存在!'];
-                    ajax_return($json);
-                }
+            if (class_exists('_empty')) {
+                /* 如果定义了_empty操作 则调用 */
+                $class_name = '_empty';
+            } else {
+                $json = ['ret' => 404, 'data' => null, 'msg' => 'Action 不存在!'];
+                self::ajax_return($json);
             }
         }
 
@@ -143,8 +158,8 @@ class App {
             if (is_callable([$module, '_empty'])) {
                 $action = '_empty';
             } else {
-                $json = ['ret' => 404, 'data' => null, 'msg' => "{$module}-{$action} 不存在!"];
-                ajax_return($json);
+                $json = ['ret' => 404, 'data' => null, 'msg' => "{$module}\\{$action} 不存在!"];
+                self::ajax_return($json);
             }
         }
 
@@ -160,7 +175,7 @@ class App {
             }
         } catch (\ReflectionException $e) {
             $json = ['ret' => 500, 'data' => null, 'msg' => $e->getTraceAsString()];
-            ajax_return($json);
+            self::ajax_return($json);
         }
         return;
     }

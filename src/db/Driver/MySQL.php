@@ -6,16 +6,16 @@ namespace framework\db\Driver;
  * mysql数据库驱动
  */
 class Mysql extends DbDriver {
-    
+
     // PDO连接参数
     protected $options = [
-        PDO::ATTR_CASE => PDO::CASE_LOWER,
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_ORACLE_NULLS => PDO::NULL_NATURAL,
-        PDO::ATTR_STRINGIFY_FETCHES => false,
-        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8';",
+        \PDO::ATTR_CASE => \PDO::CASE_LOWER,
+        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+        \PDO::ATTR_ORACLE_NULLS => \PDO::NULL_NATURAL,
+        \PDO::ATTR_STRINGIFY_FETCHES => false,
+        \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8';",
     ];
-    
+
     public static function getInstance($db = 'mysql') {
         static $obj = [];
         if (!isset($obj[$db])) {
@@ -32,7 +32,7 @@ class Mysql extends DbDriver {
      */
     public function __connect() {
         try {
-            $this->link = new PDO($this->db_config['dsn'], $this->db_config['username'], $this->db_config['password'], [PDO::ATTR_CASE => PDO::CASE_NATURAL]);
+            $this->link = new \PDO($this->db_config['dsn'], $this->db_config['username'], $this->db_config['password'], [\PDO::ATTR_CASE => \PDO::CASE_NATURAL]);
             $this->link->exec('SET QUOTED_IDENTIFIER ON');
             $this->link->exec('SET NAMES UTF8');
             $this->link->exec("SET ANSI_WARNINGS ON");
@@ -62,7 +62,7 @@ class Mysql extends DbDriver {
         $info = array();
         if ($result) {
             foreach ($result as $key => $val) {
-                if (PDO::CASE_LOWER != $this->link->getAttribute(PDO::ATTR_CASE)) {
+                if (\PDO::CASE_LOWER != $this->link->getAttribute(\PDO::ATTR_CASE)) {
                     $val = array_change_key_case($val, CASE_LOWER);
                 }
                 $info[$val['field']] = array(

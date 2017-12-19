@@ -2,6 +2,9 @@
 
 namespace framework\ssdb;
 
+use framework\core\Config;
+use framework\core\Log;
+
 /**
  * SSDB 分布式中间层
  * 只列出常用方法
@@ -98,8 +101,8 @@ class ssdbService {
      * @param \Exception $ex
      */
     public function exception($ex) {
-        $msg = 'Message:' . $ex->getMessage() . "\nTrace:" . $ex->getTraceAsString();
-        Log::write($msg, Log::EMERG);
+        Log::write($ex, Log::EMERG);
+        throw new \Exception($ex);
     }
 
     /**

@@ -1,8 +1,6 @@
 <?php
 
-namespace framework\libraries;
-
-use framework\core\Config;
+namespace framework\core;
 
 /**
  *  简单展示模板类

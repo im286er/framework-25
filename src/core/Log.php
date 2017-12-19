@@ -2,8 +2,6 @@
 
 namespace framework\core;
 
-use framework\libraries\Request;
-
 /**
  * 日志类
  * Log::write 写入日志
@@ -22,6 +20,71 @@ class Log {
     const SQL = 'SQL';  // SQL：SQL语句
 
     static $format = ' c '; /* 日期格式 */
+
+    /**
+     * debug 详情
+     * @param type $message
+     */
+    public static function debug($message) {
+        self::write($message, self::DEBUG);
+    }
+
+    /**
+     * 信息: 程序输出信息
+     * @param type $message
+     */
+    public static function info($message) {
+        self::write($message, self::INFO);
+    }
+
+    /**
+     * 一般性重要的事件
+     * @param type $message
+     */
+    public static function notice($message) {
+        self::write($message, self::NOTICE);
+    }
+
+    /**
+     * 出现非错误性的异常
+     * @param type $message
+     * @param type $array
+     */
+    public static function warning($message) {
+        self::write($message, self::WARN);
+    }
+
+    /**
+     * 运行时出现的错误，不需要立刻采取行动，但必须记录下来以备检测。
+     * @param type $message
+     */
+    public static function error($message) {
+        self::write($message, self::ERR);
+    }
+
+    /**
+     * 紧急情况
+     * @param type $message
+     */
+    public static function critical($message) {
+        self::write($message, self::CRIT);
+    }
+
+    /**
+     * **必须**立刻采取行动
+     * @param type $message
+     */
+    public static function alert($message) {
+        self::write($message, self::ALERT);
+    }
+
+    /**
+     * 严重错误
+     * @param type $message
+     */
+    public static function emerg($message) {
+        self::write($message, self::EMERG);
+    }
 
     /**
      * 日志直接写入

@@ -1,6 +1,6 @@
 <?php
 
-namespace framework\libraries;
+namespace framework\core;
 
 /**
  * 响应

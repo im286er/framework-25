@@ -10,7 +10,7 @@ namespace framework\ssdb;
  *
  * SSDB PHP client SDK.
  */
-class SSDBException extends Exception {
+class SSDBException extends \Exception {
     
 }
 

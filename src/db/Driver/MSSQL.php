@@ -1,6 +1,7 @@
 <?php
 
 namespace framework\db\Driver;
+use framework\core\Log;
 
 /**
  * MSSQL PDO驱动  sql2005
@@ -22,7 +23,7 @@ class MSSQL extends DbDriver {
      */
     public function __connect() {
         try {
-            $this->link = new PDO($this->db_config['dsn'], $this->db_config['username'], $this->db_config['password'], [PDO::ATTR_CASE => PDO::CASE_NATURAL]);
+            $this->link = new PDO($this->db_config['dsn'], $this->db_config['username'], $this->db_config['password'], [\PDO::ATTR_CASE => \PDO::CASE_NATURAL]);
             $this->link->exec('SET QUOTED_IDENTIFIER ON');
             $this->link->exec('SET NAMES UTF8');
             $this->link->exec("SET ANSI_WARNINGS ON");
