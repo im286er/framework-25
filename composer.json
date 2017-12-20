@@ -15,9 +15,6 @@
         "ext-posix": "*"
     },
     "autoload": {
-	     "files": [
-                "src/function.php"
-        ],
         "psr-4": {
             "framework\\": "src/"
         }
