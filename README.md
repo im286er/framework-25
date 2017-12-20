@@ -4,7 +4,8 @@
 # 安装
 php composer.phar require huangshaowen/framework:dev-master
 
-.
+框架结构目录
+
 ├── README.md                                       说明文件
 ├── src                                             框架源码
 │   ├── core                                 
