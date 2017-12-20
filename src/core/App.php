@@ -8,10 +8,6 @@ class App {
      * 应用程序初始化
      */
     static public function init() {
-        /* 开始时间与内存 */
-        define('START_TIME', microtime(true));
-        define('START_MEM', memory_get_usage());
-
         /* 异常处理类 */
         set_exception_handler("\\framework\\core\\App::exception_handle");
         /* 自定义错误处理函数，设置后 error_reporting 将失效。因为要保证 ajax 输出格式，所以必须触发 error_handle */
@@ -148,7 +144,7 @@ class App {
                 /* 如果定义了_empty操作 则调用 */
                 $class_name = '_empty';
             } else {
-                $json = ['ret' => 404, 'data' => null, 'msg' => 'Action 不存在!'];
+                $json = ['ret' => 404, 'data' => null, 'msg' => "{$class_name}\\{$action} 不存在!"];
                 self::ajax_return($json);
             }
         }
@@ -158,7 +154,7 @@ class App {
             if (is_callable([$module, '_empty'])) {
                 $action = '_empty';
             } else {
-                $json = ['ret' => 404, 'data' => null, 'msg' => "{$module}\\{$action} 不存在!"];
+                $json = ['ret' => 404, 'data' => null, 'msg' => "{$class_name}\\{$action} 不存在!"];
                 self::ajax_return($json);
             }
         }

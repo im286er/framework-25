@@ -44,7 +44,6 @@ class View {
         header('Content-Type:text/html; charset=utf-8');
         $content = $this->fetch($tpl, $dir);
         echo $content;
-        echo '<!-- 运行信息 Process: ' . execute_time() . ' ms, UseMem: ' . execute_mem() . ' kb -->';
     }
 
     /**
