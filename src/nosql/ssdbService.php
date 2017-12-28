@@ -1,6 +1,6 @@
 <?php
 
-namespace framework\ssdb;
+namespace framework\nosql;
 
 use framework\core\Config;
 use framework\core\Log;

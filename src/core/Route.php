@@ -251,13 +251,7 @@ class Route {
         } else {
             /* 解析路由地址 */
             $var = self::parseUrl($url);
-            /* 处理函数 */
-            foreach ($var as $key => $val) {
-                if (strpos($val, '|')) {
-                    list($val, $fun) = explode('|', $val);
-                    $var[$key] = $fun($val);
-                }
-            }
+
             /* 解析剩余的URL参数 */
             $regx = substr_replace($regx, '', 0, strlen($matches[0]));
             if ($regx) {

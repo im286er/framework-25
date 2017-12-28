@@ -1,6 +1,6 @@
 <?php
 
-namespace framework\Lib;
+namespace framework\nosql;
 
 use framework\core\Config;
 use framework\ssdb\ssdbService;

@@ -1,6 +1,6 @@
 <?php
 
-namespace framework\ssdb;
+namespace framework\nosql;
 
 /**
  * Copyright (c) 2012, ideawu
