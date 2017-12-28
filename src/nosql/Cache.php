@@ -3,7 +3,6 @@
 namespace framework\nosql;
 
 use framework\core\Config;
-use framework\ssdb\ssdbService;
 
 /**
  * 缓存类  memcached
