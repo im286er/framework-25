@@ -9,16 +9,10 @@ class View {
 
     // 模板赋值
     public $_var = [];
-    // 模板目录
-    public $template_dir;
-
-    public function __construct() {
-        $this->template_dir = Config::get('template_dir');
-    }
 
     public function fetch($tpl, $dir = null) {
         if (null === $dir) {
-            $dir = $this->template_dir;
+            $dir = Config::get('template_dir');
         }
         if ($dir) {
             $dir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;
