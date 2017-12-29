@@ -1,5 +1,5 @@
 # framework
-一个简洁的php框架，在实际应用中，不是一个通用框架。
+一个简洁的php框架，已经在生产环境中使用，不是一个通用框架。
 
 # 安装
 php composer.phar require huangshaowen/framework:dev-master
@@ -16,7 +16,7 @@ define('APP_PATH', __DIR__ . '/apps/');
 /* 引入框架 */
 require( ROOT_PATH . 'vendor/autoload.php' );
 /* 引入站点配置文件 */
-\framework\core\Config::load(ROOT_PATH . 'data/config.php');
+//  \framework\core\Config::load(ROOT_PATH . 'data/config.php');
 /* 应用类库命名空间 */
 \framework\core\Loader::addNamespace(
         [
@@ -44,6 +44,10 @@ class index extends Action {
 }
 
 ---------------- end /apps/www/action/index.php   ------------------------------
+
+
+
+
 
 
 框架结构目录
