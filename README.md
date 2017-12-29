@@ -4,7 +4,10 @@
 # 安装
 php composer.phar require huangshaowen/framework:dev-master
 
+
 # 开始使用
+
+/* 入口文件 */
 ----------------------- /index.php ---------------------------------------------
 /* 定义根目录 */
 define('ROOT_PATH', __DIR__ . '/');
@@ -26,7 +29,10 @@ require( ROOT_PATH . 'vendor/autoload.php' );
 \framework\core\App::run();
 ---------------- end /index.php   ----------------------------------------------
 
+
+
 /* 测试程序 */
+
 ---------------- /apps/www/action/index.php   ----------------------------------
 
 namespace www\action;
