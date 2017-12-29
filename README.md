@@ -29,9 +29,8 @@ php composer.phar require huangshaowen/framework:dev-master
 │   │       ├── MSSQLModel.php                 mssql模型类
 │   │       ├── MYSQLModel.php                 mysql模型类
 │   │       └── PGSQLModel.php                 pgsql模型类
-│   ├── Lib
+│   ├── nosql
 │   │   └── Cache.php                          memcached缓存类
-│   ├── ssdb
 │   │   ├── SimpleSSDB.php                     ssdb基类供ssdbService.php调用
 │   │   └── ssdbService.php                    ssdb 服务类
 │   └── tpl

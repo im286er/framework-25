@@ -3,6 +3,7 @@
 namespace framework\db\Model;
 
 use framework\db\Driver\PGSQL;
+use framework\nosql\Cache;
 
 /**
  * PGSQL Model模型类
@@ -78,12 +79,20 @@ class PGSQLModel {
         unset($this->db);
     }
 
+    /**
+     * 
+     * @staticvar array $obj
+     * @param type $name
+     * @param type $connection
+     * @return \self
+     */
     public static function getInstance($name = '', $connection = 'pgsql') {
+        $key = md5("{$connection}-{$name}");
         static $obj = [];
-        if (!isset($obj[$name])) {
-            $obj[$name] = new self($name, $connection);
+        if (!isset($obj[$key])) {
+            $obj[$key] = new self($name, $connection);
         }
-        return $obj[$name];
+        return $obj[$key];
     }
 
     /**
@@ -146,12 +155,12 @@ class PGSQLModel {
             return $this->getField(strtoupper($method) . '(' . $field . ') AS tp_' . $method);
         } elseif (strtolower(substr($method, 0, 5)) == 'getby') {
             // 根据某个字段获取记录
-            $field = parse_name(substr($method, 5));
+            $field = \framework\core\Loader::parseName(substr($method, 5));
             $where[$field] = $args[0];
             return $this->where($where)->find();
         } elseif (strtolower(substr($method, 0, 10)) == 'getfieldby') {
             // 根据某个字段获取记录的某个值
-            $name = parse_name(substr($method, 10));
+            $name = \framework\core\Loader::parseName(substr($method, 10));
             $where[$name] = $args[0];
             return $this->where($where)->getField($args[1]);
         } elseif (isset($this->_scope[$method])) {// 命名范围的单独调用支持
@@ -655,28 +664,28 @@ class PGSQLModel {
      * @return false|integer
      */
     protected function lazyWrite($guid, $step, $lazyTime) {
-        $value = \Cache::getInstance()->simple_get($guid);
+        $value = Cache::getInstance()->simple_get($guid);
         if (false !== $value) {
             // 存在缓存写入数据
-            $lazy_time = \Cache::getInstance()->simple_get($guid . '_time');
+            $lazy_time = Cache::getInstance()->simple_get($guid . '_time');
             $lazyTime = intval($lazy_time) + $lazyTime;
             if (TIMESTAMP > $lazyTime) {
                 // 延时更新时间到了，删除缓存数据 并实际写入数据库
-                \Cache::getInstance()->simple_delete($guid);
-                \Cache::getInstance()->simple_delete($guid . '_time');
+                Cache::getInstance()->simple_delete($guid);
+                Cache::getInstance()->simple_delete($guid . '_time');
 
                 return $value + $step;
             } else {
                 // 追加数据到缓存
-                \Cache::getInstance()->simple_set($guid, ($value + $step));
+                Cache::getInstance()->simple_set($guid, ($value + $step));
 
                 return false;
             }
         } else {
             // 没有缓存数据
-            \Cache::getInstance()->simple_set($guid, $step);
+            Cache::getInstance()->simple_set($guid, $step);
             // 计时开始
-            \Cache::getInstance()->simple_set($guid . '_time', TIMESTAMP);
+            Cache::getInstance()->simple_set($guid . '_time', TIMESTAMP);
 
             return false;
         }

@@ -179,7 +179,7 @@ class Loader {
         spl_autoload_register("\\framework\\core\\Loader::autoload", true, true);
 
         /* Composer自动加载支持 */
-        if (is_dir(VENDOR_PATH . 'composer')) {
+        if (defined(VENDOR_PATH) && is_dir(VENDOR_PATH . 'composer')) {
             self::registerComposerLoader();
         }
     }
@@ -225,7 +225,14 @@ class Loader {
      * @return bool|null True if loaded, null otherwise
      */
     public static function autoload($class) {
+        /* 先采用 psr4标准 加载 */
+        if ($file = self::findFile($class)) {
+            __include_file($file);
 
+            return true;
+        }
+        
+        /* 旧加载方式 */
         $class_file = $class . '.class.php';
 
         if (substr($class, -5) == 'Model') {
@@ -263,15 +270,29 @@ class Loader {
             require $file;
             return true;
         }
+        
+        return false;
+    }
 
-        /* 最后一次，采用 psr4标准 加载 */
-        if ($file = self::findFile($class)) {
-            __include_file($file);
+    /**
+     * 字符串命名风格转换
+     * type 0 将 Java 风格转换为 C 的风格 1 将 C 风格转换为 Java 的风格
+     * @access public
+     * @param  string  $name    字符串
+     * @param  integer $type    转换类型
+     * @param  bool    $ucfirst 首字母是否大写（驼峰规则）
+     * @return string
+     */
+    public static function parseName($name, $type = 0, $ucfirst = true) {
+        if ($type) {
+            $name = preg_replace_callback('/_([a-zA-Z])/', function ($match) {
+                return strtoupper($match[1]);
+            }, $name);
 
-            return true;
+            return $ucfirst ? ucfirst($name) : lcfirst($name);
         }
 
-        return false;
+        return strtolower(trim(preg_replace("/[A-Z]/", "_\\0", $name), "_"));
     }
 
 }

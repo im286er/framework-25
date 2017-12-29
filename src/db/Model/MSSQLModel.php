@@ -3,6 +3,7 @@
 namespace framework\db\Model;
 
 use framework\db\Driver\MSSQL;
+use framework\nosql\Cache;
 
 /**
  * MsSQL Model模型类
@@ -43,13 +44,13 @@ class MSSQLModel {
      * @access public
      * @param string $name 模型名称
      */
-    public function __construct($name = '') {
+    public function __construct($name = '', $connection = 'mssql') {
         // 获取模型名称
         if (!empty($name)) {
             $this->name = $name;
         }
         // 数据库初始化操作
-        $this->db = MSSQL::getInstance();
+        $this->db = MSSQL::getInstance($connection);
     }
 
     /**
@@ -60,81 +61,20 @@ class MSSQLModel {
         unset($this->db);
     }
 
-    public static function getInstance($name = '') {
+    /**
+     * 
+     * @staticvar array $obj
+     * @param type $name
+     * @param type $connection
+     * @return \self
+     */
+    public static function getInstance($name = '', $connection = 'mssql') {
+        $key = md5("{$connection}-{$name}");
         static $obj = [];
-        if (!isset($obj[$name])) {
-            $obj[$name] = new self($name);
+        if (!isset($obj[$key])) {
+            $obj[$key] = new self($name, $connection);
         }
-        return $obj[$name];
-    }
-
-    /**
-     * 自动检测数据表信息
-     * @access protected
-     * @return void
-     */
-    protected function _checkTableInfo() {
-        // 如果不是Model类 自动记录数据表信息
-        // 只在第一次执行记录
-        if (empty($this->fields)) {
-            // 如果数据表字段没有定义则自动获取
-            if ($this->db_fields_cache) {
-                $cache_id = strtolower($this->name);
-                $fields = \Cache::getInstance()->group('_mssql_')->get($cache_id);
-                if ($fields) {
-                    $this->fields = $fields;
-                    if (!empty($fields['_pk'])) {
-                        $this->pk = $fields['_pk'];
-                    }
-                    return;
-                }
-            }
-            // 每次都会读取数据表信息
-            $this->flush();
-        }
-    }
-
-    /**
-     * 获取字段信息并缓存
-     * @access public
-     * @return void
-     */
-    public function flush() {
-        // 缓存不存在则查询数据表信息
-        $this->db->setModel($this->name);
-        $fields = $this->db->getFields($this->getTableName());
-        if (!$fields) { // 无法获取字段信息
-            return false;
-        }
-        $this->fields = array_keys($fields);
-        unset($this->fields['_pk']);
-        foreach ($fields as $key => $val) {
-            // 记录字段类型
-            $type[$key] = $val['type'];
-            if ($val['primary']) {
-                // 增加复合主键支持
-                if (isset($this->fields['_pk']) && $this->fields['_pk'] != null) {
-                    if (is_string($this->fields['_pk'])) {
-                        $this->pk = [$this->fields['_pk']];
-                        $this->fields['_pk'] = $this->pk;
-                    }
-                    $this->pk[] = $key;
-                    $this->fields['_pk'][] = $key;
-                } else {
-                    $this->pk = $key;
-                    $this->fields['_pk'] = $key;
-                }
-                if ($val['autoinc'])
-                    $this->autoinc = true;
-            }
-        }
-        // 记录字段类型信息
-        $this->fields['_type'] = $type;
-
-        if ($this->db_fields_cache) {
-            $cache_id = strtolower($this->name);
-            \Cache::getInstance()->group('_mssql_')->set($cache_id, $this->fields);
-        }
+        return $obj[$key];
     }
 
     /**
@@ -197,12 +137,12 @@ class MSSQLModel {
             return $this->getField(strtoupper($method) . '(' . $field . ') AS tp_' . $method);
         } elseif (strtolower(substr($method, 0, 5)) == 'getby') {
             // 根据某个字段获取记录
-            $field = parse_name(substr($method, 5));
+            $field = \framework\core\Loader::parseName(substr($method, 5));
             $where[$field] = $args[0];
             return $this->where($where)->find();
         } elseif (strtolower(substr($method, 0, 10)) == 'getfieldby') {
             // 根据某个字段获取记录的某个值
-            $name = parse_name(substr($method, 10));
+            $name = \framework\core\Loader::parseName(substr($method, 10));
             $where[$name] = $args[0];
             return $this->where($where)->getField($args[1]);
         } elseif (isset($this->_scope[$method])) {// 命名范围的单独调用支持
@@ -716,28 +656,28 @@ class MSSQLModel {
      * @return false|integer
      */
     protected function lazyWrite($guid, $step, $lazyTime) {
-        $value = \Cache::getInstance()->simple_get($guid);
+        $value = Cache::getInstance()->simple_get($guid);
         if (false !== $value) {
             // 存在缓存写入数据
-            $lazy_time = \Cache::getInstance()->simple_get($guid . '_time');
+            $lazy_time = Cache::getInstance()->simple_get($guid . '_time');
             $lazyTime = intval($lazy_time) + $lazyTime;
             if (TIMESTAMP > $lazyTime) {
                 // 延时更新时间到了，删除缓存数据 并实际写入数据库
-                \Cache::getInstance()->simple_delete($guid);
-                \Cache::getInstance()->simple_delete($guid . '_time');
+                Cache::getInstance()->simple_delete($guid);
+                Cache::getInstance()->simple_delete($guid . '_time');
 
                 return $value + $step;
             } else {
                 // 追加数据到缓存
-                \Cache::getInstance()->simple_set($guid, ($value + $step));
+                Cache::getInstance()->simple_set($guid, ($value + $step));
 
                 return false;
             }
         } else {
             // 没有缓存数据
-            \Cache::getInstance()->simple_set($guid, $step);
+            Cache::getInstance()->simple_set($guid, $step);
             // 计时开始
-            \Cache::getInstance()->simple_set($guid . '_time', TIMESTAMP);
+            Cache::getInstance()->simple_set($guid . '_time', TIMESTAMP);
 
             return false;
         }
