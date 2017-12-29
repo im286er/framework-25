@@ -1,5 +1,5 @@
 # framework
-又一个轮子，php框架，学习中。
+一个简洁的php框架，在实际应用中，不是一个通用框架。
 
 # 安装
 php composer.phar require huangshaowen/framework:dev-master
