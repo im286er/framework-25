@@ -4,6 +4,42 @@
 # 安装
 php composer.phar require huangshaowen/framework:dev-master
 
+# 开始使用
+----------------------- /index.php ---------------------------------------------
+/* 定义根目录 */
+define('ROOT_PATH', __DIR__ . '/');
+/* 定义项目路径 */
+define('APP_PATH', __DIR__ . '/apps/');
+/* 引入框架 */
+require( ROOT_PATH . 'vendor/autoload.php' );
+/* 引入站点配置文件 */
+\framework\core\Config::load(ROOT_PATH . 'data/config.php');
+/* 应用类库命名空间 */
+\framework\core\Loader::addNamespace(
+        [
+            'admin' => APP_PATH . 'admin/',
+            'common' => APP_PATH . 'common/',
+            'www' => APP_PATH . 'www/',
+        ]
+);
+/* 启动程序 */
+\framework\core\App::run();
+---------------- end /index.php   ----------------------------------------------
+
+/* 测试程序 */
+---------------- /apps/www/action/index.php   ----------------------------------
+
+namespace www\action;
+use framework\core\Action;
+class index extends Action {
+    public function index() {
+        $this->ajaxReturn(['ret'=>200,'data'=>null,'msg'=>'欢迎使用']);
+    }
+}
+
+---------------- end /apps/www/action/index.php   ------------------------------
+
+
 框架结构目录
 
 ├── README.md                                       说明文件
