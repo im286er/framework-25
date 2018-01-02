@@ -1,0 +1,455 @@
+
+数据库操作
+
+数据库定义文件放在 子项目下或主配置文件中。 如  \apps\www\config.php
+
+dsn 数据库类型支持  pgsql 、 mysql 等
+
+return [
+    /* 数据库配置 */
+    'database' => [
+        '连接名称1' => [
+            'dsn' => '数据库类型:dbname=数据库名称;host=数据库主机IP;port=数据库服务器端口',
+            'username' => '用户名',
+            'password' => '密码',
+        ],
+        '连接名称2' => [
+            'dsn' => '数据库类型:dbname=数据库名称;host=数据库主机IP;port=数据库服务器端口',
+            'username' => '用户名',
+            'password' => '密码',
+        ]
+    ]
+];
+
+
+连贯操作 可以有效的提高数据存取的代码清晰度和开发效率，并且支持所有的CURD操作。
+连贯操作 	作用 	支持的参数类型
+where* 	用于查询或者更新条件的定义 	字符串、数组和对象
+table 	用于定义要操作的数据表名称 	字符串和数组
+alias 	用于给当前数据表定义别名 	字符串
+field 	用于定义要查询的字段 	字符串和数组
+order 	用于对结果排序 	字符串和数组
+limit 	用于限制查询结果数量 	字符串和数字
+group 	用于对查询的group支持 	字符串
+having 	用于对查询的having支持 	字符串
+join* 	用于对查询的join支持 	字符串和数组
+union* 	用于对查询的union支持 	字符串、数组和对象
+distinct 	用于查询的distinct支持 	布尔值
+
+
+
+
+table 主要用于指定操作的数据表。
+$db->table('user')->where('status>1')->select();
+
+alias 用于设置当前数据表的别名，便于使用其他的连贯操作例如join方法等。
+
+
+查询语言
+
+
+一、使用字符串作为查询条件
+
+这是最传统的方式，但是安全性不高，例如：
+$db->where('type=1 AND status=1')->select(); 
+最后生成的SQL语句是
+SELECT * FROM 表名 WHERE type=1 AND status=1
+    
+采用字符串查询的时候，我们可以配合使用字符串条件的安全预处理机制。
+
+二、使用数组作为查询条件
+
+这种方式是最常用的查询方式，例如：
+    $condition['name'] = 'thinkphp';
+    $condition['status'] = 1;
+    // 把查询条件传入查询方法
+    $db->where($condition)->select(); 
+
+最后生成的SQL语句是
+SELECT * FROM 表名 WHERE `name`='thinkphp' AND status=1
+
+如果进行多字段查询，那么字段之间的默认逻辑关系是 逻辑与 AND，但是用下面的规则可以更改默认的逻辑判断，通过使用 _logic 定义查询逻辑：
+    $condition['name'] = 'thinkphp';
+    $condition['account'] = 'thinkphp';
+    $condition['_logic'] = 'OR';
+    // 把查询条件传入查询方法
+    $db->where($condition)->select(); 
+最后生成的SQL语句是
+SELECT * FROM 表名 WHERE `name`='thinkphp' OR `account`='thinkphp'
+
+
+表达式查询
+$map['字段名'] = array('表达式','查询条件');
+
+表达式不分大小写，支持的查询表达式有下面几种，分别表示的含义是：
+表达式 	含义 	协助记忆
+EQ 	等于（=） 	equal
+NEQ 	不等于（<>） 	not equal
+GT 	大于（>） 	greater
+EGT 	大于等于（>=） 	equal or greater
+LT 	小于（<） 	less than
+ELT 	小于等于（<=） 	equal or less than
+LIKE 	模糊查询 	
+[NOT] BETWEEN 	（不在）区间查询 	
+[NOT] IN 	（不在）IN 查询 	
+EXP 	表达式查询，支持SQL语法 	expression
+
+表达式查询的用法示例如下：
+EQ ：等于（=）
+
+例如：
+
+    $map['id']  = array('eq',100);
+
+和下面的查询等效
+
+    $map['id']  = 100;
+
+表示的查询条件就是 id = 100
+NEQ： 不等于（<>）
+
+例如：
+
+    $map['id']  = array('neq',100);
+
+表示的查询条件就是 id <> 100
+GT：大于（>）
+
+例如：
+
+    $map['id']  = array('gt',100);
+
+表示的查询条件就是 id > 100
+EGT：大于等于（>=）
+
+例如：
+
+    $map['id']  = array('egt',100);
+
+表示的查询条件就是 id >= 100
+LT：小于（<）
+
+例如：
+
+    $map['id']  = array('lt',100);
+
+表示的查询条件就是 id < 100
+ELT： 小于等于（<=）
+
+例如：
+
+    $map['id']  = array('elt',100);
+
+表示的查询条件就是 id <= 100
+[NOT] LIKE： 同sql的LIKE
+
+例如：
+
+    $map['name'] = array('like','thinkphp%');
+
+查询条件就变成 name like 'thinkphp%' 如果配置了DB_LIKE_FIELDS参数的话，某些字段也会自动进行模糊查询。例如设置了：
+
+    'DB_LIKE_FIELDS'=>'title|content'
+
+的话，使用
+
+    $map['title'] = 'thinkphp';
+
+查询条件就会变成 title like '%thinkphp%' 支持数组方式，例如
+
+    $map['a'] =array('like',array('%thinkphp%','%tp'),'OR');
+    $map['b'] =array('notlike',array('%thinkphp%','%tp'),'AND');
+
+生成的查询条件就是：
+
+    (a like '%thinkphp%' OR a like '%tp') AND (b not like '%thinkphp%' AND b not like '%tp')
+
+[NOT] BETWEEN ：同sql的[not] between
+
+查询条件支持字符串或者数组，例如：
+
+    $map['id']  = array('between','1,8');
+
+和下面的等效：
+
+    $map['id']  = array('between',array('1','8'));
+
+查询条件就变成 id BETWEEN 1 AND 8
+[NOT] IN： 同sql的[not] in
+
+查询条件支持字符串或者数组，例如：
+
+    $map['id']  = array('not in','1,5,8');
+
+和下面的等效：
+
+    $map['id']  = array('not in',array('1','5','8'));
+
+查询条件就变成 id NOT IN (1,5, 8)
+EXP：表达式
+
+支持更复杂的查询情况 例如：
+
+    $map['id']  = array('in','1,3,8');
+
+可以改成：
+
+    $map['id']  = array('exp',' IN (1,3,8) ');
+    
+    
+区间查询
+
+支持对某个字段的区间查询，例如：
+
+    $map['id'] = array(array('gt',1),array('lt',10)) ;
+
+得到的查询条件是： ( id > 1) AND ( id < 10)
+
+    $map['id'] = array(array('gt',3),array('lt',10), 'or') ;
+
+得到的查询条件是： ( id > 3) OR ( id < 10)
+
+    $map['id']  = array(array('neq',6),array('gt',3),'and'); 
+
+得到的查询条件是：( id != 6) AND ( id > 3)
+
+    最后一个可以是AND、 OR或者 XOR运算符，如果不写，默认是AND运算。
+
+区间查询的条件可以支持普通查询的所有表达式，也就是说类似LIKE、GT和EXP这样的表达式都可以支持。另外区间查询还可以支持更多的条件，只要是针对一个字段的条件都可以写到一起，例如：
+
+    $map['name']  = array(array('like','%a%'), array('like','%b%'), array('like','%c%'), 'ThinkPHP','or'); 
+
+最后的查询条件是： ( name LIKE '%a%') OR ( name LIKE '%b%') OR ( name LIKE '%c%') OR ( name = 'ThinkPHP')
+
+
+组合查询
+
+组合查询的主体还是采用数组方式查询，只是加入了一些特殊的查询支持，包括字符串模式查询（_string）、复合查询（_complex）、请求字符串查询（_query），混合查询中的特殊查询每次查询只能定义一个，由于采用数组的索引方式，索引相同的特殊查询会被覆盖。
+一、字符串模式查询
+
+数组条件可以和字符串条件（采用_string 作为查询条件）混合使用，例如：
+    $map['id'] = array('neq',1);
+    $map['name'] = 'ok';
+    $map['_string'] = 'status=1 AND score>10';
+    $db->where($map)->select(); 
+
+最后得到的查询条件就成了：
+
+    ( `id` != 1 ) AND ( `name` = 'ok' ) AND ( status=1 AND score>10 )
+
+二、请求字符串查询方式
+
+请求字符串查询是一种类似于URL传参的方式，可以支持简单的条件相等判断。
+
+    $map['id'] = array('gt','100');
+    $map['_query'] = 'status=1&score=100&_logic=or';
+
+得到的查询条件是：
+
+    `id`>100 AND (`status` = '1' OR `score` = '100')
+
+三、复合查询
+
+复合查询相当于封装了一个新的查询条件，然后并入原来的查询条件之中，所以可以完成比较复杂的查询条件组装。 例如：
+
+    $where['name']  = array('like', '%thinkphp%');
+    $where['title']  = array('like','%thinkphp%');
+    $where['_logic'] = 'or';
+    $map['_complex'] = $where;
+    $map['id']  = array('gt',1);
+
+查询条件是
+
+    ( id > 1) AND ( ( name like '%thinkphp%') OR ( title like '%thinkphp%') )
+
+复合查询使用了_complex作为子查询条件来定义，配合之前的查询方式，可以非常灵活的制定更加复杂的查询条件。 很多查询方式可以相互转换，例如上面的查询条件可以改成：
+
+    $where['id'] = array('gt',1);
+    $where['_string'] = ' (name like "%thinkphp%")  OR ( title like "%thinkphp") ';
+
+最后生成的SQL语句是一致的。
+
+
+
+
+统计查询
+
+在应用中我们经常会用到一些统计数据，例如当前所有（或者满足某些条件）的用户数、所有用户的最大积分、用户的平均成绩等等，为这些统计操作提供了一系列的内置方法，包括：
+方法 	说明
+Count 	统计数量，参数是要统计的字段名（可选）
+Max 	获取最大值，参数是要统计的字段名（必须）
+Min 	获取最小值，参数是要统计的字段名（必须）
+Avg 	获取平均值，参数是要统计的字段名（必须）
+Sum 	获取总分，参数是要统计的字段名（必须）
+
+用法示例：
+
+获取用户数：
+$userCount = $db->count();
+
+或者根据字段统计：
+
+    $userCount = $db->count("id");
+
+获取用户的最大积分：
+
+    $maxScore = $db->max('score');
+
+获取积分大于0的用户的最小积分：
+
+    $minScore = $db->where('score>0')->min('score');
+
+获取用户的平均积分：
+
+    $avgScore = $db->avg('score');
+
+统计用户的总成绩：
+
+    $sumScore = $db->sum('score');
+
+并且所有的统计查询均支持连贯操作的使用。
+
+    
+SQL查询
+
+1、query方法
+
+query方法用于执行SQL查询操作，如果数据非法或者查询错误则返回false，否则返回查询结果数据集（同select方法）。
+
+
+2、execute方法
+
+execute用于更新和写入数据的sql操作，如果数据非法或者查询错误则返回false ，否则返回影响的记录数。
+
+
+
+
+
+/**
+ *  示例:
+ */
+class shop_payment {
+
+    private $db;
+
+    function __construct() {
+        $this->db = \framework\db\Model\PGSQLModel::getInstance('shop_payment', 'shop');
+    }
+
+    public static function getInstance() {
+        static $obj;
+        if (!$obj) {
+            $obj = new self();
+        }
+        return $obj;
+    }
+
+    /**
+     * 添加支付方式基本信息，返回支付方式编号
+     * @param type $data
+     * @return boolean
+     */
+    public function add($data) {
+        if (empty($data)) {
+            return false;
+        }
+        $rs = $this->db->add($data);
+        if ($rs) {
+            return $rs;
+        }
+        return false;
+    }
+
+    /**
+     * 修改支付方式基本信息
+     * @param type $id
+     * @param type $data
+     * @return boolean
+     */
+    public function save($id, $data) {
+        if (empty($id) || empty($data)) {
+            return false;
+        }
+        $vo = $this->read($id);
+        if ($vo) {
+            $rs = $this->db->where(['id' => $id])->save($data);
+            if ($rs) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 删除支付方式基本信息
+     * @param type $id
+     * @return boolean
+     */
+    public function delete($id) {
+        if (empty($id)) {
+            return false;
+        }
+        $vo = $this->read($id);
+        if ($vo) {
+            $rs = $this->db->where(['id' => $id])->delete();
+            if ($rs) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 读取支付方式基本信息
+     * @param type $id
+     * @return boolean
+     */
+    public function read($id) {
+        if (empty($id)) {
+            return false;
+        }
+        $vo = $this->db->where(['id' => $id])->find();
+         if ($vo) {
+                return $vo;
+            }
+        return false;
+    }
+
+    /**
+     * 根据条件获取统计
+     * @param type $where       默认 []
+     * @param string $field     默认 count(id) as total
+     * @return type
+     */
+    public function get_count($where = [], $field = '') {
+        if (empty($field)) {
+            $field = 'count(id) as total';
+        }
+
+        $vo = $this->db->where($where)->field($field)->find();
+        if ($vo) {
+            return isset($vo['total']) ? intval($vo['total']) : 0;
+        }
+
+        return 0;
+    }
+
+    /**
+     * 根据条件获取列表
+     * @param type $where
+     * @param type $page
+     * @param type $size
+     * @param type $order
+     * @return type
+     */
+    public function get_list($where = [], $page = 1, $size = 10, $order = 'sort_order asc,id desc') {
+        $field = 'id, pay_code, pay_name, pay_thumb, status, sort_order, isonline, ctime, mtime';
+        $offset = ($page - 1) * $size;
+        $list = $this->db->where($where)->limit($offset, $size)->field($field)->order($order)->select();
+        if ($list) {
+            return $list;
+        }
+        return false;
+    }
+
+}
