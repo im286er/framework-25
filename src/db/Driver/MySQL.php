@@ -41,7 +41,7 @@ class Mysql extends DbDriver {
             $this->link->exec("SET CONCAT_NULL_YIELDS_NULL ON");
         } catch (PDOException $e) {
             $json = ['ret' => 500, 'data' => null, 'msg' => '连接数据库服务器失败:' . $e->getMessage()];
-            ajax_return($json);
+            \framework\core\App::ajax_return($json);
         }
     }
 
