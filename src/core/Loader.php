@@ -231,46 +231,7 @@ class Loader {
 
             return true;
         }
-        
-        /* 旧加载方式 */
-        $class_file = $class . '.class.php';
-
-        if (substr($class, -5) == 'Model') {
-            /* 加载数据层 */
-            $class_file = 'model/' . $class_file;
-        } elseif (substr($class, -7) == 'Service') {
-            /* 加载服务层 */
-            $class_file = 'service/' . $class_file;
-        } elseif (substr($class, -5) == 'Logic') {
-            /* 加载逻辑层 */
-            $class_file = 'logic/' . $class_file;
-        } elseif (substr($class, -6) == 'Action') {
-            /* 加载控制 */
-            $class_file = 'action/' . $class_file;
-        } elseif ((substr($class, -6) == 'Widget') && ($class != 'Widget')) {
-            /* 加载Widget */
-            $class_file = 'widget/' . $class_file;
-        } else {
-            /* 默认应用下公共 class */
-            $class_file = 'class/' . $class_file;
-        }
-        /* 判断是否启用分组 */
-        if (defined('GROUP_NAME')) {
-            $file = APP_PATH . GROUP_NAME . '/' . $class_file;
-        } else {
-            $file = APP_PATH . $class_file;
-        }
-        if ((is_file($file)) && (file_exists($file))) {
-            require $file;
-            return true;
-        }
-        /* 加载公共 */
-        $file = APP_PATH . 'common/' . $class_file;
-        if ((is_file($file)) && (file_exists($file))) {
-            require $file;
-            return true;
-        }
-        
+                
         return false;
     }
 
