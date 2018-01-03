@@ -670,7 +670,7 @@ class MYSQLModel {
             // 存在缓存写入数据
             $lazy_time = Cache::getInstance()->simple_get($guid . '_time');
             $lazyTime = intval($lazy_time) + $lazyTime;
-            if (TIMESTAMP > $lazyTime) {
+            if (time() > $lazyTime) {
                 // 延时更新时间到了，删除缓存数据 并实际写入数据库
                 Cache::getInstance()->simple_delete($guid);
                 Cache::getInstance()->simple_delete($guid . '_time');
@@ -686,7 +686,7 @@ class MYSQLModel {
             // 没有缓存数据
             Cache::getInstance()->simple_set($guid, $step);
             // 计时开始
-            Cache::getInstance()->simple_set($guid . '_time', TIMESTAMP);
+            Cache::getInstance()->simple_set($guid . '_time', time());
 
             return false;
         }
