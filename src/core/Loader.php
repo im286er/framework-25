@@ -10,11 +10,6 @@ class Loader {
     private static $prefixLengthsPsr4 = [];
     private static $prefixDirsPsr4 = [];
     private static $fallbackDirsPsr4 = [];
-    // PSR-0
-    private static $prefixesPsr0 = [];
-    private static $fallbackDirsPsr0 = [];
-    // 自动加载的文件
-    private static $autoloadFiles = [];
 
     /**
      * 查找文件
@@ -50,35 +45,6 @@ class Loader {
             }
         }
 
-        // 查找 PSR-0
-        if (false !== $pos = strrpos($class, '\\')) {
-            // namespaced class name
-            $logicalPathPsr0 = substr($logicalPathPsr4, 0, $pos + 1)
-                    . strtr(substr($logicalPathPsr4, $pos + 1), '_', '/');
-        } else {
-            // PEAR-like class name
-            $logicalPathPsr0 = strtr($class, '_', '/') . '.php';
-        }
-
-        if (isset(self::$prefixesPsr0[$first])) {
-            foreach (self::$prefixesPsr0[$first] as $prefix => $dirs) {
-                if (0 === strpos($class, $prefix)) {
-                    foreach ($dirs as $dir) {
-                        if (is_file($file = $dir . '/' . $logicalPathPsr0)) {
-                            return $file;
-                        }
-                    }
-                }
-            }
-        }
-
-        // 查找 PSR-0 fallback dirs
-        foreach (self::$fallbackDirsPsr0 as $dir) {
-            if (is_file($file = $dir . '/' . $logicalPathPsr0)) {
-                return $file;
-            }
-        }
-
         return self::$map[$class] = false;
     }
 
@@ -99,39 +65,6 @@ class Loader {
             }
         } else {
             self::addPsr4($namespace . '\\', rtrim($path, '/'), true);
-        }
-    }
-
-    // 添加Ps0空间
-    private static function addPsr0($prefix, $paths, $prepend = false) {
-        if (!$prefix) {
-            if ($prepend) {
-                self::$fallbackDirsPsr0 = array_merge(
-                        (array) $paths, self::$fallbackDirsPsr0
-                );
-            } else {
-                self::$fallbackDirsPsr0 = array_merge(
-                        self::$fallbackDirsPsr0, (array) $paths
-                );
-            }
-
-            return;
-        }
-
-        $first = $prefix[0];
-        if (!isset(self::$prefixesPsr0[$first][$prefix])) {
-            self::$prefixesPsr0[$first][$prefix] = (array) $paths;
-
-            return;
-        }
-        if ($prepend) {
-            self::$prefixesPsr0[$first][$prefix] = array_merge(
-                    (array) $paths, self::$prefixesPsr0[$first][$prefix]
-            );
-        } else {
-            self::$prefixesPsr0[$first][$prefix] = array_merge(
-                    self::$prefixesPsr0[$first][$prefix], (array) $paths
-            );
         }
     }
 
@@ -177,45 +110,6 @@ class Loader {
     public function register() {
         // 注册框架自动加载
         spl_autoload_register("\\framework\\core\\Loader::autoload", true, true);
-
-        /* Composer自动加载支持 */
-        if (defined(VENDOR_PATH) && is_dir(VENDOR_PATH . 'composer')) {
-            self::registerComposerLoader();
-        }
-    }
-
-    // 注册composer自动加载
-    private static function registerComposerLoader() {
-        if (is_file(VENDOR_PATH . 'composer/autoload_namespaces.php')) {
-            $map = require VENDOR_PATH . 'composer/autoload_namespaces.php';
-            foreach ($map as $namespace => $path) {
-                self::addPsr0($namespace, $path);
-            }
-        }
-
-        if (is_file(VENDOR_PATH . 'composer/autoload_psr4.php')) {
-            $map = require VENDOR_PATH . 'composer/autoload_psr4.php';
-            foreach ($map as $namespace => $path) {
-                self::addPsr4($namespace, $path);
-            }
-        }
-
-        if (is_file(VENDOR_PATH . 'composer/autoload_classmap.php')) {
-            $classMap = require VENDOR_PATH . 'composer/autoload_classmap.php';
-            if ($classMap) {
-                self::addClassMap($classMap);
-            }
-        }
-
-        if (is_file(VENDOR_PATH . 'composer/autoload_files.php')) {
-            $includeFiles = require VENDOR_PATH . 'composer/autoload_files.php';
-            foreach ($includeFiles as $fileIdentifier => $file) {
-                if (empty(self::$autoloadFiles[$fileIdentifier])) {
-                    __include_file($file);
-                    self::$autoloadFiles[$fileIdentifier] = true;
-                }
-            }
-        }
     }
 
     /**
@@ -231,7 +125,7 @@ class Loader {
 
             return true;
         }
-                
+
         return false;
     }
 

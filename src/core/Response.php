@@ -360,7 +360,7 @@ class Response {
      */
     public function HttpCache() {
         header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
-        header('Expires: ' . gmdate('D, d M Y H:i:s', TIMESTAMP + 31536000) . ' GMT');
+        header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 31536000) . ' GMT');
         header('Cache-control: max-age=31536000');
     }
 

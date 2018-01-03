@@ -57,8 +57,21 @@ require( ROOT_PATH . 'vendor/autoload.php' );
             'www' => APP_PATH . 'www/',
         ]
 );
-/* 启动程序 */
-\framework\core\App::run();
+
+// 启动程序
+$r = \framework\core\App::run();
+
+if ($r === false) {
+    // 失败
+    return false;
+} elseif (is_object($r) || is_array($r)) {
+    \framework\core\App::ajax_return($r);
+} else {
+    /* 字符输出 */
+    echo $r;
+}
+return ;
+
 ---------------- end /index.php   ----------------------------------------------
 
 

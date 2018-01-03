@@ -95,7 +95,7 @@ class View {
      * 不缓存的头部设置
      */
     public function noCache() {
-        $stamp = gmdate('D, d M Y H:i:s', TIMESTAMP) . ' GMT';
+        $stamp = gmdate('D, d M Y H:i:s', time()) . ' GMT';
         header('Expires: Tue, 13 Mar 1979 18:00:00 GMT');
         header('Last-Modified: ' . $stamp);
         header('Cache-Control: no-store, no-cache, must-revalidate');

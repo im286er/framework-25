@@ -200,7 +200,7 @@ abstract class Action {
         }
 
         $this->view->display('dispatch_jump.tpl.php', __DIR__ . '/../tpl/');
-        exit;
+        exit();
     }
 
     /**
@@ -258,7 +258,7 @@ abstract class Action {
             $this->view->display('dispatch_jump.tpl.php', __DIR__ . '/../tpl/');
         }
         // 中止执行  避免出错后继续执行
-        exit;
+        exit();
     }
 
     /**
