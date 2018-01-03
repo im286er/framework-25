@@ -226,16 +226,9 @@ class Response {
     public function sendHeaders() {
         // Send status code header
         if (strpos(php_sapi_name(), 'cgi') !== false) {
-            header(
-                    sprintf(
-                            'Status: %d %s', $this->status, self::$codes[$this->status]
-                    ), true
-            );
+            header(sprintf('Status: %d %s', $this->status, self::$codes[$this->status]), true);
         } else {
-            header(
-                    sprintf(
-                            '%s %d %s', (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.1'), $this->status, self::$codes[$this->status]), true, $this->status
-            );
+            header(sprintf('%s %d %s', (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.1'), $this->status, self::$codes[$this->status]), true, $this->status);
         }
 
         // Send other headers

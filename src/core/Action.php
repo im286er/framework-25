@@ -233,7 +233,7 @@ abstract class Action {
      * 无 http 缓存
      */
     protected function no_cache() {
-        $this->view->noCache();
+        Response::getInstance()->cache(false)->sendHeaders();
     }
 
     /**

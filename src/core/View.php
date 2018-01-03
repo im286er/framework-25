@@ -24,14 +24,10 @@ class View {
             ob_implicit_flush(0);
             @extract($this->_var);
             include($file);
-            $content = ob_get_clean();
+            return ob_get_clean();
         } else {
-            $error_txt = "Error: Could not load template {$file} !";
-            Log::write($error_txt);
-            trigger_error($error_txt);
-            $content = $error_txt;
+            throw new \Exception("Template file not found: {$file}.");
         }
-        return $content;
     }
 
     public function display($tpl, $dir = null) {
@@ -74,33 +70,25 @@ class View {
     }
 
     /**
-     * 清除全部赋值
-     */
-    public function clearAllAssign() {
-        $this->_vars = [];
-    }
-
-    /**
      * 清除赋值
-     *
-     * @param string ...$vars
+     * @param type $key
      */
-    public function clearAssign(...$vars) {
-        array_map(function ($var) {
-            unset($this->_vars[$var]);
-        }, $vars);
+    public function clear($key = null) {
+        if (is_null($key)) {
+            $this->_vars = [];
+        } else {
+            unset($this->_vars[$key]);
+        }
     }
 
     /**
-     * 不缓存的头部设置
+     * Displays escaped output.
+     *
+     * @param string $str String to escape
+     * @return string Escaped string
      */
-    public function noCache() {
-        $stamp = gmdate('D, d M Y H:i:s', time()) . ' GMT';
-        header('Expires: Tue, 13 Mar 1979 18:00:00 GMT');
-        header('Last-Modified: ' . $stamp);
-        header('Cache-Control: no-store, no-cache, must-revalidate');
-        header('Cache-Control: post-check=0, pre-check=0', false);
-        header('Pragma: no-cache');
+    public function e($str) {
+        echo htmlentities($str);
     }
 
     public static function getInstance() {
