@@ -126,21 +126,21 @@ abstract class Action {
      * @param String $type AJAX返回数据格式
      * @return void
      */
-    public function ajaxReturn($data, $type = 'JSON') {
+    public function ajaxReturn($json, $type = 'JSON') {
         switch (strtoupper($type)) {
             case 'JSON' :
                 // 返回JSON数据格式到客户端 包含状态信息
                 header('Content-Type:application/json; charset=utf-8');
-                exit(json_encode($data, JSON_UNESCAPED_UNICODE));
+                exit(json_encode($json, JSON_UNESCAPED_UNICODE));
             case 'JSONP':
                 // 返回JSON数据格式到客户端 包含状态信息
                 header('Content-Type:application/json; charset=utf-8');
-                $handler = get('callback', '', 't');
-                exit($handler . '(' . json_encode($data, JSON_UNESCAPED_UNICODE) . ');');
+                $callback = get('callback', '', 't');
+                exit($callback . '(' . json_encode($json, JSON_UNESCAPED_UNICODE) . ');');
             case 'EVAL' :
                 // 返回可执行的js脚本
                 header('Content-Type:text/html; charset=utf-8');
-                exit($data);
+                exit($json);
             default :
                 // 用于扩展其他返回格式数据
                 header('Content-Type:application/json; charset=utf-8');
