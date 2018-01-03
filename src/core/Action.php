@@ -158,10 +158,74 @@ abstract class Action {
      */
     protected function redirect($url, $delay = 0, $msg = '') {
         if ($delay == 0) {
-            header('Location: ' . $url);
-            exit();
+            Response::getInstance()->clear()->status(302)->header('Location', $url)->write($url)->send();
         } else {
             $this->delay_redirect($url, $delay, $msg);
+        }
+    }
+
+    /**
+     * Stops processing and returns a given response.
+     *
+     * @param int $code HTTP status code
+     * @param string $message Response message
+     */
+    public function _halt($code = 200, $message = '') {
+        Response::getInstance()->clear()->status($code)->write($message)->send();
+        exit();
+    }
+
+    /**
+     * Sends an HTTP 500 response for any errors.
+     *
+     * @param object $e Thrown exception
+     */
+    public function _error($e) {
+        $msg = sprintf('<h1>500 Internal Server Error</h1>' .
+                '<h3>%s (%s)</h3>' .
+                '<pre>%s</pre>', $e->getMessage(), $e->getCode(), $e->getTraceAsString()
+        );
+
+        try {
+            Response::getInstance()->clear()->status(500)->write($msg)->send();
+        } catch (\Exception $ex) {
+            exit($msg);
+        }
+    }
+
+    /**
+     * Sends an HTTP 404 response when a URL is not found.
+     */
+    public function _notFound() {
+        Response::getInstance()->clear()->status(404)->write('<h1>404 Not Found</h1>' . '<h3>The page you have requested could not be found.</h3>' . str_repeat(' ', 512))->send();
+    }
+
+    /**
+     * Handles ETag HTTP caching.
+     *
+     * @param string $id ETag identifier
+     * @param string $type ETag type
+     */
+    public function _etag($id, $type = 'strong') {
+        $id = (($type === 'weak') ? 'W/' : '') . $id;
+
+        Response::getInstance()->header('ETag', $id);
+
+        if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && $_SERVER['HTTP_IF_NONE_MATCH'] === $id) {
+            $this->halt(304);
+        }
+    }
+
+    /**
+     * Handles last modified HTTP caching.
+     *
+     * @param int $time Unix timestamp
+     */
+    public function _lastModified($time) {
+        $this->response()->header('Last-Modified', gmdate('D, d M Y H:i:s \G\M\T', $time));
+
+        if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) === $time) {
+            $this->halt(304);
         }
     }
 
