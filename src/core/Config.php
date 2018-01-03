@@ -3,7 +3,7 @@
 namespace framework\core;
 
 /**
- * 
+ *
  * 网站配置
  */
 class Config {
@@ -34,7 +34,20 @@ class Config {
         if (!isset(self::$config[$range])) {
             self::$config[$range] = [];
         }
-        return is_file($file) ? self::set(include $file, $name, $range) : self::$config[$range];
+        /* 如果是文件 */
+        if (is_file($file)) {
+            return self::set(include $file, $name, $range);
+        }
+        /* 如果是文件夹 */
+        if (is_dir($file)) {
+            chdir($file);
+            $configFiles = glob("*.php");
+            foreach ($configFiles as $single_file) {
+                self::set(include $file . $single_file, $name, $range);
+            }
+        }
+        /* 默认处理 */
+        return self::$config[$range];
     }
 
     /**

@@ -88,8 +88,8 @@ class Dispatcher {
 
             /* 定义分组应用 */
             define('GROUP_NAME', strtolower($_GET['app']));
-            /* 载入应用路由 */
-            Config::load(APP_PATH . GROUP_NAME . '/routes.php');
+            /* 载入分组配置 */
+            Config::load(APP_PATH . GROUP_NAME . '/config/');
         } else {
             /* 不是域名部署 */
             /* 默认规则调度URL */
@@ -105,8 +105,8 @@ class Dispatcher {
 
             /* 定义分组应用 */
             define('GROUP_NAME', $app);
-            /* 载入应用路由 */
-            Config::load(APP_PATH . $app . '/routes.php');
+            /* 载入分组配置 */
+            Config::load(APP_PATH . GROUP_NAME . '/config/');
         }
 
         // URL后缀
@@ -142,9 +142,6 @@ class Dispatcher {
         if (!defined('GROUP_NAME')) {
             define('GROUP_NAME', strtolower($_GET['app']));
         }
-
-        /* 引入应用配置文件 */
-        Config::load(APP_PATH . GROUP_NAME . '/config.php');
 
         if (empty($_GET['c'])) {
             $_GET['c'] = 'index';
