@@ -7,9 +7,8 @@
 ├── src                                             框架源码
 │   ├── core                                 
 │   │   ├── Action.php                          控制器基类
-│   │   ├── App.php                             应用运行
+│   │   ├── App.php                             应用分发运行
 │   │   ├── Config.php                          配置设置与获取
-│   │   ├── Dispatcher.php                      应用分发
 │   │   ├── Loader.php                          框架加载器
 │   │   ├── Log.php                             日志工具
 │   │   ├── Request.php                         获取http请求
