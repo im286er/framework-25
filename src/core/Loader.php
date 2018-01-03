@@ -119,13 +119,9 @@ class Loader {
      * @return bool|null True if loaded, null otherwise
      */
     public static function autoload($class) {
-        /* 先采用 psr4标准 加载 */
         if ($file = self::findFile($class)) {
-            __include_file($file);
-
-            return true;
+            return __include_file($file);
         }
-
         return false;
     }
 
