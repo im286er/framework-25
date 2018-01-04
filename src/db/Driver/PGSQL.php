@@ -186,7 +186,7 @@ class PGSQL extends DbDriver {
                 }
                 return $this->numRows;
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             $this->error();
             return false;
         }

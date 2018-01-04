@@ -63,8 +63,8 @@ abstract class DbDriver {
      */
     public function __connect() {
         try {
-            $this->link = new PDO($this->db_config['dsn'], $this->db_config['username'], $this->db_config['password'], $this->options);
-        } catch (PDOException $e) {
+            $this->link = new \PDO($this->db_config['dsn'], $this->db_config['username'], $this->db_config['password'], $this->options);
+        } catch (\PDOException $e) {
             throw new \Exception('连接数据库服务器失败:' . $e->getMessage());
         }
     }
@@ -137,7 +137,7 @@ abstract class DbDriver {
                 } else {
                     return $this->getResult();
                 }
-            } catch (PDOException $e) {
+            } catch (\PDOException $e) {
                 /* 出错重新连接数据库 */
                 if ($i < 2) {
                     $this->close();
@@ -209,7 +209,7 @@ abstract class DbDriver {
                 }
                 return $this->numRows;
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             $this->error();
             return false;
         }

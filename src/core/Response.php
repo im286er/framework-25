@@ -228,12 +228,12 @@ class Response {
      */
     public function cache($expires) {
         if ($expires === false) {
-            $this->headers['Expires'] = 'Mon, 26 Jul 1997 05:00:00 GMT';
-            $this->headers['Cache-Control'] = array(
+            $this->headers['Expires'] = 'Mon, 15 Jul 2001 05:00:00 GMT';
+            $this->headers['Cache-Control'] = [
                 'no-store, no-cache, must-revalidate',
                 'post-check=0, pre-check=0',
                 'max-age=0'
-            );
+            ];
             $this->headers['Pragma'] = 'no-cache';
         } else {
             $expires = is_int($expires) ? $expires : strtotime($expires);
@@ -334,18 +334,6 @@ class Response {
         $this->sendHeaders();
         $this->send();
         exit();
-    }
-
-    /**
-     * 不缓存的头部设置
-     */
-    public function noCache() {
-        $stamp = gmdate('D, d M Y H:i:s', $_SERVER['REQUEST_TIME']) . ' GMT';
-        header('Expires: Tue, 13 Mar 1979 18:00:00 GMT');
-        header('Last-Modified: ' . $stamp);
-        header('Cache-Control: no-store, no-cache, must-revalidate');
-        header('Cache-Control: post-check=0, pre-check=0', false);
-        header('Pragma: no-cache');
     }
 
     /**

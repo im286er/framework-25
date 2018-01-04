@@ -24,14 +24,14 @@ class MSSQL extends DbDriver {
      */
     public function __connect() {
         try {
-            $this->link = new PDO($this->db_config['dsn'], $this->db_config['username'], $this->db_config['password'], [\PDO::ATTR_CASE => \PDO::CASE_NATURAL]);
+            $this->link = new \PDO($this->db_config['dsn'], $this->db_config['username'], $this->db_config['password'], [\PDO::ATTR_CASE => \PDO::CASE_NATURAL]);
             $this->link->exec('SET QUOTED_IDENTIFIER ON');
             $this->link->exec('SET NAMES UTF8');
             $this->link->exec("SET ANSI_WARNINGS ON");
             $this->link->exec("SET ANSI_PADDING ON");
             $this->link->exec("SET ANSI_NULLS ON");
             $this->link->exec("SET CONCAT_NULL_YIELDS_NULL ON");
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             throw new \Exception('连接数据库服务器失败:' . $e->getMessage());
         }
     }
@@ -287,7 +287,7 @@ class MSSQL extends DbDriver {
                     }
                     return $this->numRows;
                 }
-            } catch (PDOException $e) {
+            } catch (\PDOException $e) {
                 /* 出错重新连接数据库 */
                 if ($i < 2) {
                     $this->close();
