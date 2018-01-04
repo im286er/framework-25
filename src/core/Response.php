@@ -270,23 +270,7 @@ class Response {
             }
         }
 
-        // Send content length
-        $length = $this->getContentLength();
-
-        if ($length > 0) {
-            header('Content-Length: ' . $length);
-        }
-
         return $this;
-    }
-
-    /**
-     * Gets the content length.
-     *
-     * @return string Content length
-     */
-    public function getContentLength() {
-        return extension_loaded('mbstring') ? mb_strlen($this->body, $this->charset) : strlen($this->body);
     }
 
     /**
