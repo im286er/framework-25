@@ -8,14 +8,6 @@ class App {
     public $module_name;
     public $action_name;
 
-    public function __construct() {
-        
-    }
-
-    public function __destruct() {
-        
-    }
-
     public static function getInstance() {
         static $obj;
         if (!$obj) {
@@ -124,36 +116,6 @@ class App {
             Response::getInstance()->clear()->contentType('application/json')->write(json_encode($json, JSON_UNESCAPED_UNICODE))->send();
         } catch (\Exception $ex) {
             exit($msg);
-        }
-    }
-
-    /**
-     * Ajax方式返回数据到客户端
-     *
-     * @access protected
-     * @param mixed $json 要返回的数据
-     * @param String $type AJAX返回数据格式
-     * @return void
-     */
-    public function ajax_return($json, $type = '') {
-        switch (strtoupper($type)) {
-            case 'JSON' :
-                // 返回JSON数据格式到客户端 包含状态信息
-                header('Content-Type:application/json; charset=utf-8');
-                exit(json_encode($json, JSON_UNESCAPED_UNICODE));
-            case 'JSONP':
-                // 返回JSON数据格式到客户端 包含状态信息
-                header('Content-Type:application/json; charset=utf-8');
-                $callback = get('callback', '', 't');
-                exit($callback . '(' . json_encode($json, JSON_UNESCAPED_UNICODE) . ');');
-            case 'EVAL' :
-                // 返回可执行的js脚本
-                header('Content-Type:text/html; charset=utf-8');
-                exit($json);
-            default :
-                // 用于扩展其他返回格式数据
-                header('Content-Type:application/json; charset=utf-8');
-                exit(json_encode($json, JSON_UNESCAPED_UNICODE));
         }
     }
 
