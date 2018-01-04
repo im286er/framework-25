@@ -15,23 +15,40 @@ abstract class Action {
     protected $view = null;
 
     /**
+     * Request实例
+     * @var \Request
+     */
+    protected $request;
+
+    /**
+     * 应用实例
+     * @var App
+     */
+    protected $app;
+
+    /**
      * 控制器参数
      * @var config
      * @access protected
      */
     protected $config = array();
 
+    // 初始化
+    function __initialize() {
+        
+    }
+
     /**
      * 架构函数 取得模板对象实例
      * @access public
      */
     public function __construct() {
-        //实例化视图类
         $this->view = View::getInstance();
+        $this->request = Request::getInstance();
+        $this->app = App::getInstance();
+
         //控制器初始化
-        if (method_exists($this, '__initialize')) {
-            $this->__initialize();
-        }
+        $this->__initialize();
     }
 
     /**
@@ -41,7 +58,7 @@ abstract class Action {
      * @param type $dir     指定要调用的模板目录
      */
     protected function display($tpl, $dir = null) {
-        $this->view->display($tpl, $dir);
+        return $this->view->display($tpl, $dir);
     }
 
     /**
@@ -170,33 +187,15 @@ abstract class Action {
      * @param int $code HTTP status code
      * @param string $message Response message
      */
-    public function _halt($code = 200, $message = '') {
+    public function halt($code = 200, $message = '') {
         Response::getInstance()->clear()->status($code)->write($message)->send();
         exit();
     }
 
     /**
-     * Sends an HTTP 500 response for any errors.
-     *
-     * @param object $e Thrown exception
-     */
-    public function _error($e) {
-        $msg = sprintf('<h1>500 Internal Server Error</h1>' .
-                '<h3>%s (%s)</h3>' .
-                '<pre>%s</pre>', $e->getMessage(), $e->getCode(), $e->getTraceAsString()
-        );
-
-        try {
-            Response::getInstance()->clear()->status(500)->write($msg)->send();
-        } catch (\Exception $ex) {
-            exit($msg);
-        }
-    }
-
-    /**
      * Sends an HTTP 404 response when a URL is not found.
      */
-    public function _notFound() {
+    public function not_found() {
         Response::getInstance()->clear()->status(404)->write('<h1>404 Not Found</h1>' . '<h3>The page you have requested could not be found.</h3>' . str_repeat(' ', 512))->send();
     }
 
@@ -206,7 +205,7 @@ abstract class Action {
      * @param string $id ETag identifier
      * @param string $type ETag type
      */
-    public function _etag($id, $type = 'strong') {
+    public function etag($id, $type = 'strong') {
         $id = (($type === 'weak') ? 'W/' : '') . $id;
 
         Response::getInstance()->header('ETag', $id);
@@ -221,7 +220,7 @@ abstract class Action {
      *
      * @param int $time Unix timestamp
      */
-    public function _lastModified($time) {
+    public function last_modified($time) {
         $this->response()->header('Last-Modified', gmdate('D, d M Y H:i:s \G\M\T', $time));
 
         if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) === $time) {

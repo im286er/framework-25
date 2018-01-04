@@ -59,18 +59,7 @@ require( ROOT_PATH . 'vendor/autoload.php' );
 );
 
 // 启动程序
-$r = \framework\core\App::run();
-
-if ($r === false) {
-    // 失败
-    return false;
-} elseif (is_object($r) || is_array($r)) {
-    \framework\core\App::ajax_return($r);
-} else {
-    /* 字符输出 */
-    echo $r;
-}
-return ;
+\framework\core\App::getInstance()->run();
 
 ---------------- end /index.php   ----------------------------------------------
 
@@ -84,7 +73,7 @@ namespace www\action;
 use framework\core\Action;
 class index extends Action {
     public function index() {
-        $this->ajaxReturn(['ret'=>200,'data'=>null,'msg'=>'欢迎使用']);
+        return ['ret'=>200,'data'=>null,'msg'=>'欢迎使用'];
     }
 }
 

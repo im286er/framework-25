@@ -65,8 +65,7 @@ abstract class DbDriver {
         try {
             $this->link = new PDO($this->db_config['dsn'], $this->db_config['username'], $this->db_config['password'], $this->options);
         } catch (PDOException $e) {
-            $json = ['ret' => 500, 'data' => null, 'msg' => '连接数据库服务器失败:' . $e->getMessage()];
-            \framework\core\App::ajax_return($json);
+            throw new \Exception('连接数据库服务器失败:' . $e->getMessage());
         }
     }
 

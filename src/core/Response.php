@@ -8,6 +8,18 @@ namespace framework\core;
 class Response {
 
     /**
+     * 当前contentType
+     * @var string
+     */
+    protected $contentType = 'text/html';
+
+    /**
+     * 字符集
+     * @var string
+     */
+    protected $charset = 'utf-8';
+
+    /**
      * HTTP 状态代码
      * @var int
      */
@@ -119,6 +131,22 @@ class Response {
         511 => 'Network Authentication Required',
     ];
 
+    public function __construct() {
+        $this->contentType($this->contentType, $this->charset);
+    }
+
+    /**
+     * 页面输出类型
+     * @access public
+     * @param  string $contentType 输出类型
+     * @param  string $charset     输出编码
+     * @return $this
+     */
+    public function contentType($contentType, $charset = 'utf-8') {
+        $this->header('Content-Type', $contentType . '; charset=' . $charset);
+        return $this;
+    }
+
     /**
      * Sets the HTTP status of the response.
      *
@@ -186,7 +214,7 @@ class Response {
      */
     public function clear() {
         $this->status = 200;
-        $this->headers = array();
+        $this->headers = [];
         $this->body = '';
 
         return $this;
@@ -258,9 +286,7 @@ class Response {
      * @return string Content length
      */
     public function getContentLength() {
-        return extension_loaded('mbstring') ?
-                mb_strlen($this->body, 'latin1') :
-                strlen($this->body);
+        return extension_loaded('mbstring') ? mb_strlen($this->body, $this->charset) : strlen($this->body);
     }
 
     /**
