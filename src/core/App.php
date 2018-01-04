@@ -8,15 +8,12 @@ class App {
     public $module_name;
     public $action_name;
 
-    /** 应用开始时间 */
-    protected $begin_time;
-
-    /** 应用内存初始占用 */
-    protected $begin_mem;
-
     public function __construct() {
-        $this->begin_time = microtime(true);
-        $this->begin_mem = memory_get_usage();
+        
+    }
+
+    public function __destruct() {
+        
     }
 
     public static function getInstance() {
@@ -188,7 +185,7 @@ class App {
         }
 
         /*  子域名部署 */
-        if (Config::get('APP_SUB_DOMAIN_DEPLOY')) {
+        if ((Config::get('APP_SUB_DOMAIN_DEPLOY') && ((php_sapi_name() != "cli"))) || (defined('is_workerman') == true)) {
 
             $host = empty($_SERVER['HTTP_HOST']) ? $_SERVER['SERVER_NAME'] : $_SERVER['HTTP_HOST'];
 
@@ -392,24 +389,6 @@ class App {
      */
     public function get_action_name() {
         return $this->action_name;
-    }
-
-    /**
-     * 获取应用开启时间
-     * @access public
-     * @return float
-     */
-    public function get_begin_time() {
-        return $this->begin_time;
-    }
-
-    /**
-     * 获取应用初始内存占用
-     * @access public
-     * @return integer
-     */
-    public function get_begin_mem() {
-        return $this->begin_mem;
     }
 
     /**
