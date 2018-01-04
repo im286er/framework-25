@@ -15,18 +15,6 @@ abstract class Action {
     protected $view = null;
 
     /**
-     * Request实例
-     * @var \Request
-     */
-    protected $request;
-
-    /**
-     * 应用实例
-     * @var App
-     */
-    protected $app;
-
-    /**
      * 控制器参数
      * @var config
      * @access protected
@@ -44,8 +32,6 @@ abstract class Action {
      */
     public function __construct() {
         $this->view = View::getInstance();
-        $this->request = Request::getInstance();
-        $this->app = App::getInstance();
 
         //控制器初始化
         $this->__initialize();
