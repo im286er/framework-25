@@ -328,7 +328,7 @@ class Response {
      * @param int     $status
      */
     public function redirect($url, $status = 302) {
-        $this->setStatus($status);
+        $this->status($status);
         $this->header('Location', $url);
         $this->setBody('');
         $this->sendHeaders();
