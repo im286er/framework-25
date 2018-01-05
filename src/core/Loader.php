@@ -107,7 +107,7 @@ class Loader {
      *
      * @param bool $prepend Whether to prepend the autoloader or not
      */
-    public function register() {
+    public static function register() {
         // 注册框架自动加载
         spl_autoload_register("\\framework\\core\\Loader::autoload", true, true);
     }
