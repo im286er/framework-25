@@ -44,7 +44,7 @@ abstract class Action {
      * @param type $dir     指定要调用的模板目录
      */
     protected function display($tpl, $dir = null) {
-        return $this->view->display($tpl, $dir);
+        return $this->view->fetch($tpl, $dir);
     }
 
     /**

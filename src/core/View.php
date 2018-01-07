@@ -30,12 +30,6 @@ class View {
         }
     }
 
-    public function display($tpl, $dir = null) {
-        header('Content-Type:text/html; charset=utf-8');
-        $content = $this->fetch($tpl, $dir);
-        echo $content;
-    }
-
     /**
      * 注册变量
      *
