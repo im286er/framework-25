@@ -135,20 +135,24 @@ abstract class Action {
                 // 返回JSON数据格式到客户端 包含状态信息
                 $json = json_encode($data, JSON_UNESCAPED_UNICODE);
                 Response::getInstance()->header('Content-Type', 'application/json; charset=utf-8')->write($json)->send();
+                break;
             case 'JSONP':
                 // 返回JSON数据格式到客户端 包含状态信息
                 $callback = get('callback', '', 't');
                 $json = json_encode($data, JSON_UNESCAPED_UNICODE);
                 Response::getInstance()->header('Content-Type', 'application/javascript; charset=utf-8')->write($callback . '(' . $json . ');')->send();
+                break;
             case 'EVAL' :
                 // 返回可执行的js脚本
                 Response::getInstance()->write($data)->send();
+                break;
             default :
                 // 用于扩展其他返回格式数据
                 $json = json_encode($data, JSON_UNESCAPED_UNICODE);
                 Response::getInstance()->header('Content-Type', 'application/json; charset=utf-8')->write($json)->send();
+                break;
         }
-        return;
+        exit();
     }
 
     /**
