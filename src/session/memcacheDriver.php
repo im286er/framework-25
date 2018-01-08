@@ -5,7 +5,7 @@ namespace framework\session;
 /**
  * session memcache 驱动类
  */
-class memcacheDriver implements SessionHandlerInterface {
+class memcacheDriver {
 
     private $_expiration = 28800;       /* 8小时 */
 
