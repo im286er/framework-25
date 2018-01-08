@@ -2,10 +2,12 @@
 
 namespace framework\session;
 
+use framework\nosql\Cache;
+
 /**
  * session memcache 驱动类
  */
-class memcacheDriver {
+class memcacheDriver implements \SessionHandlerInterface {
 
     private $_expiration = 28800;       /* 8小时 */
 
