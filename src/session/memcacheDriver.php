@@ -7,25 +7,9 @@ use framework\nosql\Cache;
 /**
  * session memcache 驱动类
  */
-class memcacheDriver implements \SessionHandlerInterface {
+class memcacheDriver extends \SessionHandler {
 
     private $_expiration = 28800;       /* 8小时 */
-
-    public static function getInstance() {
-        static $obj;
-        if (!$obj) {
-            $obj = new self();
-        }
-        return $obj;
-    }
-
-    /**
-     * session 已连接
-     * @return bool
-     */
-    private function is_active() {
-        return session_status() == PHP_SESSION_ACTIVE;
-    }
 
     public function open($savePath, $sessionName) {
         return true;
@@ -37,7 +21,7 @@ class memcacheDriver implements \SessionHandlerInterface {
 
     public function read($session_id) {
         if (empty($session_id)) {
-            return false;
+            return '';
         }
         return Cache::getInstance()->simple_get($session_id);
     }
@@ -46,14 +30,16 @@ class memcacheDriver implements \SessionHandlerInterface {
         if (empty($session_id)) {
             return false;
         }
-        return Cache::getInstance()->simple_set($session_id, $session_data, $this->_expiration);
+        Cache::getInstance()->simple_set($session_id, $session_data, $this->_expiration);
+        return true;
     }
 
     public function destroy($session_id) {
         if (empty($session_id)) {
             return false;
         }
-        return Cache::getInstance()->simple_delete($session_id);
+        Cache::getInstance()->simple_delete($session_id);
+        return true;
     }
 
     public function gc($maxlifetime) {
