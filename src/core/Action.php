@@ -237,24 +237,26 @@ abstract class Action {
     function delay_redirect($url, $time = 0, $msg = '', $msg_type = 0) {
         //发送成功信息
         if ($msg_type == 0) {
-            $this->view->assign('message', $msg); // 提示信息
+            $this->assign('message', $msg); // 提示信息
         } else {
-            $this->view->assign('error', $msg); // 提示信息
+            $this->assign('error', $msg); // 提示信息
         }
         // 成功操作后默认停留1秒
         if (0 === $time) {
-            $this->view->assign('waitSecond', '1');
+            $this->assign('waitSecond', '1');
         } else {
-            $this->view->assign('waitSecond', $time);
+            $this->assign('waitSecond', $time);
         }
         // 默认操作成功自动返回操作前页面
         if (empty($url)) {
-            $this->view->assign("jumpUrl", $_SERVER["HTTP_REFERER"]);
+            $this->assign("jumpUrl", $_SERVER["HTTP_REFERER"]);
         } else {
-            $this->view->assign("jumpUrl", $url);
+            $this->assign("jumpUrl", $url);
         }
 
-        $this->view->display('dispatch_jump.tpl.php', __DIR__ . '/../tpl/');
+        $return = $this->fetch('dispatch_jump.tpl.php', __DIR__ . '/../tpl/');
+        Response::getInstance()->write($return)->send();
+        // 中止执行  避免出错后继续执行
         exit();
     }
 
@@ -278,40 +280,41 @@ abstract class Action {
             $this->ajaxReturn($data);
         }
         if (is_int($ajax)) {
-            $this->view->assign('waitSecond', $ajax);
+            $this->assign('waitSecond', $ajax);
         }
         if (!empty($jumpUrl)) {
-            $this->view->assign('jumpUrl', $jumpUrl);
+            $this->assign('jumpUrl', $jumpUrl);
         }
 
         // 提示标题
-        $this->view->assign('msgTitle', $status ? '操作成功' : '操作失败');
+        $this->assign('msgTitle', $status ? '操作成功' : '操作失败');
 
-        $this->view->assign('status', $status);   // 状态
+        $this->assign('status', $status);   // 状态
         if ($status) { //发送成功信息
-            $this->view->assign('message', $message); // 提示信息
+            $this->assign('message', $message); // 提示信息
             // 成功操作后默认停留1秒
             if (!isset($this->waitSecond)) {
-                $this->view->assign('waitSecond', '1');
+                $this->assign('waitSecond', '1');
             }
             // 默认操作成功自动返回操作前页面
             if (!isset($this->jumpUrl)) {
-                $this->view->assign("jumpUrl", $_SERVER["HTTP_REFERER"]);
+                $this->assign("jumpUrl", $_SERVER["HTTP_REFERER"]);
             }
-            $this->view->display('dispatch_jump.tpl.php', __DIR__ . '/../tpl/');
+            $return = $this->fetch('dispatch_jump.tpl.php', __DIR__ . '/../tpl/');
         } else {
-            $this->view->assign('error', $message); // 提示信息
+            $this->assign('error', $message); // 提示信息
             //发生错误时候默认停留3秒
             if (!isset($this->waitSecond)) {
-                $this->view->assign('waitSecond', '3');
+                $this->assign('waitSecond', '3');
             }
             // 默认发生错误的话自动返回上页
             if (!isset($this->jumpUrl)) {
-                $this->view->assign('jumpUrl', "javascript:history.back(-1);");
+                $this->assign('jumpUrl', "javascript:history.back(-1);");
             }
 
-            $this->view->display('dispatch_jump.tpl.php', __DIR__ . '/../tpl/');
+            $return = $this->fetch('dispatch_jump.tpl.php', __DIR__ . '/../tpl/');
         }
+        Response::getInstance()->write($return)->send();
         // 中止执行  避免出错后继续执行
         exit();
     }
