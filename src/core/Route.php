@@ -192,7 +192,7 @@ class Route {
                 }, $url);
             }
             header("Location: $url", true, (is_array($route) && isset($route[1])) ? $route[1] : 301);
-            return false;
+            exit();
         } else {
             /* 解析路由地址 */
             $var = self::parseUrl($url);
