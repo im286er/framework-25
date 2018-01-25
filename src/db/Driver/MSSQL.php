@@ -3,6 +3,7 @@
 namespace framework\db\Driver;
 
 use framework\core\Log;
+use framework\core\Exception;
 
 /**
  * MSSQL PDO驱动  sql2005
@@ -32,7 +33,7 @@ class MSSQL extends DbDriver {
             $this->link->exec("SET ANSI_NULLS ON");
             $this->link->exec("SET CONCAT_NULL_YIELDS_NULL ON");
         } catch (\PDOException $e) {
-            throw new \Exception('连接数据库服务器失败:' . $e->getMessage());
+            throw new Exception('连接数据库服务器失败:' . $e->getMessage(), 500);
         }
     }
 

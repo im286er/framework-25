@@ -41,7 +41,7 @@ class App {
      * @param type $errstr
      * @param type $errfile
      * @param type $errline
-     * @throws \Exception
+     * @return boolean
      */
     public static function error_handle($errno, $errstr, $errfile, $errline) {
         $errortype = [
@@ -105,7 +105,6 @@ class App {
     /**
      * 异常处理
      * @param type $e
-     * @throws \Exception
      */
     public static function exception_handle($e) {
         $msg = $e->getMessage() . ' File: ' . $e->getFile() . ' [' . $e->getLine() . ']';

@@ -2,6 +2,8 @@
 
 namespace framework\db\Driver;
 
+use framework\core\Exception;
+
 /**
  * mysql数据库驱动
  */
@@ -40,7 +42,7 @@ class Mysql extends DbDriver {
             $this->link->exec("SET ANSI_NULLS ON");
             $this->link->exec("SET CONCAT_NULL_YIELDS_NULL ON");
         } catch (\PDOException $e) {
-            throw new \Exception('连接数据库服务器失败:' . $e->getMessage());
+            throw new Exception('连接数据库服务器失败:' . $e->getMessage(), 500);
         }
     }
 

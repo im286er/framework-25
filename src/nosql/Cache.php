@@ -3,6 +3,7 @@
 namespace framework\nosql;
 
 use framework\core\Config;
+use framework\core\Exception;
 
 /**
  * 缓存类  memcached
@@ -39,7 +40,7 @@ class Cache {
 
         $this->conf = Config::get('memcached_cache');
         if (empty($this->conf)) {
-            throw new \Exception('请配置 memcache !');
+            throw new Exception('请配置 memcache !');
         }
 
         $this->connect();

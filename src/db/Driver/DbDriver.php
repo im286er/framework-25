@@ -4,6 +4,7 @@ namespace framework\db\Driver;
 
 use framework\core\Config;
 use framework\core\Log;
+use framework\core\Exception;
 
 /**
  * 数据库驱动
@@ -65,7 +66,7 @@ abstract class DbDriver {
         try {
             $this->link = new \PDO($this->db_config['dsn'], $this->db_config['username'], $this->db_config['password'], $this->options);
         } catch (\PDOException $e) {
-            throw new \Exception('连接数据库服务器失败:' . $e->getMessage());
+            throw new Exception('连接数据库服务器失败:' . $e->getMessage(), 500);
         }
     }
 
@@ -586,7 +587,7 @@ abstract class DbDriver {
                     $data = is_string($val[1]) ? explode(',', $val[1]) : $val[1];
                     $whereStr .= $key . ' ' . $this->exp[$exp] . ' ' . $this->parseValue($data[0]) . ' AND ' . $this->parseValue($data[1]);
                 } else {
-                    throw new \Exception('where express error:' . $val[0]);
+                    throw new Exception('where express error:' . $val[0], 500);
                 }
             } else {
                 $count = count($val);

@@ -26,7 +26,7 @@ class View {
             include($file);
             return ob_get_clean();
         } else {
-            throw new \Exception("Template file not found: {$file}.");
+            throw new Exception("Template file not found: {$file}.", 404);
         }
     }
 
