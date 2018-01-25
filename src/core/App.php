@@ -108,11 +108,11 @@ class App {
      * @throws \Exception
      */
     public static function exception_handle($e) {
-        $msg = "500 Internal Server Error" . $e->getMessage() . ' File: ' . $e->getFile() . ' [' . $e->getLine() . ']';
+        $msg = $e->getMessage() . ' File: ' . $e->getFile() . ' [' . $e->getLine() . ']';
         Log::write($msg, Log::EMERG);
 
         try {
-            $json = ['ret' => 500, 'data' => null, 'msg' => $msg];
+            $json = ['ret' => $e->getCode(), 'data' => null, 'msg' => $e->getMessage()];
             Response::getInstance()->clear()->contentType('application/json')->write(json_encode($json, JSON_UNESCAPED_UNICODE))->send();
         } catch (\Exception $ex) {
             exit($msg);
