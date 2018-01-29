@@ -60,7 +60,7 @@ class View {
      * @return NULL|mixed
      */
     public function get($name = '') {
-        return $name === '' ? $this->_vars : ($this->_vars[$name] ? $this->_vars[$name] : NULL);
+        return $name === '' ? $this->_var : ($this->_var[$name] ? $this->_var[$name] : NULL);
     }
 
     /**
@@ -69,9 +69,9 @@ class View {
      */
     public function clear($key = null) {
         if (is_null($key)) {
-            $this->_vars = [];
+            $this->_var = [];
         } else {
-            unset($this->_vars[$key]);
+            unset($this->_var[$key]);
         }
     }
 
@@ -82,7 +82,7 @@ class View {
      * @return string Escaped string
      */
     public function e($str) {
-        echo htmlentities($str);
+        return htmlentities($str);
     }
 
     public static function getInstance() {
