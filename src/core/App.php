@@ -44,6 +44,9 @@ class App {
      * @return boolean
      */
     public static function error_handle($errno, $errstr, $errfile, $errline) {
+
+        $errfile = str_replace($_SERVER['DOCUMENT_ROOT'], '', $errfile);
+
         $errortype = [
             E_ERROR => 'Error',
             E_WARNING => 'Warning',
@@ -72,7 +75,7 @@ class App {
             case E_COMPILE_ERROR:
                 // 抛出异常，记录到日志
                 $errnostr = isset($errortype[$errno]) ? $errortype[$errno] : 'Unknonw';
-                $s = "[$errnostr] : $errstr in File $errfile, Line: $errline";
+                $s = "[{$errnostr}] : {$errstr} in File {$errfile}, Line: {$errline}";
                 Log::write($s, Log::EMERG);
 
                 $msg = "500 Internal Server Error {$errno} {$s}";
@@ -87,13 +90,13 @@ class App {
             case E_WARNING:
                 // 记录到日志
                 $errnostr = isset($errortype[$errno]) ? $errortype[$errno] : 'Unknonw';
-                $s = "[$errnostr] : $errstr in File $errfile, Line: $errline";
+                $s = "[{$errnostr}] : {$errstr} in File {$errfile}, Line: {$errline}";
                 Log::write($s, Log::WARN);
                 break;
             case E_NOTICE:
                 // 记录到日志
                 $errnostr = isset($errortype[$errno]) ? $errortype[$errno] : 'Unknonw';
-                $s = "[$errnostr] : $errstr in File $errfile, Line: $errline";
+                $s = "[{$errnostr}] : {$errstr} in File {$errfile}, Line: {$errline}";
                 Log::write($s, Log::NOTICE);
                 break;
             default:
@@ -107,7 +110,9 @@ class App {
      * @param type $e
      */
     public static function exception_handle($e) {
-        $msg = $e->getMessage() . ' File: ' . $e->getFile() . ' [' . $e->getLine() . ']';
+        $errfile = str_replace($_SERVER['DOCUMENT_ROOT'], '', $e->getFile());
+
+        $msg = $e->getMessage() . ' File: ' . $errfile . ' [' . $e->getLine() . ']';
         Log::write($msg, Log::EMERG);
 
         try {
