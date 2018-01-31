@@ -26,6 +26,8 @@ class View {
             include($file);
             return ob_get_clean();
         } else {
+            $file = str_replace($_SERVER['DOCUMENT_ROOT'], '', $file);
+
             throw new Exception("Template file not found: {$file}.", 404);
         }
     }
