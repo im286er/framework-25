@@ -21,9 +21,11 @@ class App {
      */
     public function init() {
         /* 异常处理类 */
-        set_exception_handler("\\framework\\core\\App::exception_handle");
+        set_exception_handler("\\framework\\core\\ErrorOrException::AppException");
         /* 自定义错误处理函数，设置后 error_reporting 将失效。因为要保证 ajax 输出格式，所以必须触发 error_handle */
-        set_error_handler("\\framework\\core\\App::error_handle");
+        set_error_handler("\\framework\\core\\ErrorOrException::ErrorHandle");
+        /* 设置自定义捕获致命异常函数 */
+        register_shutdown_function("\\framework\\core\\ErrorOrException::FatalError");
 
         /* 设置默认时区 */
         date_default_timezone_set('Asia/Shanghai');
@@ -33,94 +35,6 @@ class App {
 
         //URL调度
         $this->dispatch();
-    }
-
-    /**
-     * 出错处理
-     * @param type $errno
-     * @param type $errstr
-     * @param type $errfile
-     * @param type $errline
-     * @return boolean
-     */
-    public static function error_handle($errno, $errstr, $errfile, $errline) {
-
-        $errfile = str_replace($_SERVER['DOCUMENT_ROOT'], '', $errfile);
-
-        $errortype = [
-            E_ERROR => 'Error',
-            E_WARNING => 'Warning',
-            E_PARSE => 'Parse Error',
-            E_NOTICE => 'Notice',
-            E_CORE_ERROR => 'Core Error',
-            E_CORE_WARNING => 'Core Warning',
-            E_COMPILE_ERROR => 'Compile Error',
-            E_COMPILE_WARNING => 'Compile Warning',
-            E_DEPRECATED => 'Deprecated',
-            E_USER_ERROR => 'User Error',
-            E_USER_WARNING => 'User Warning',
-            E_USER_NOTICE => 'User Notice',
-            E_USER_DEPRECATED => 'User Deprecated',
-            E_STRICT => 'Runtime Notice',
-            E_RECOVERABLE_ERROR => 'Catchable Fatal Error',
-        ];
-
-        // 判断错误级别，决定是否退出。
-
-        switch ($errno) {
-            case E_ERROR:
-            case E_PARSE:
-            case E_USER_ERROR:
-            case E_CORE_ERROR:
-            case E_COMPILE_ERROR:
-                // 抛出异常，记录到日志
-                $errnostr = isset($errortype[$errno]) ? $errortype[$errno] : 'Unknonw';
-                $s = "[{$errnostr}] : {$errstr} in File {$errfile}, Line: {$errline}";
-                Log::write($s, Log::EMERG);
-
-                $msg = "500 Internal Server Error {$errno} {$s}";
-
-                try {
-                    $json = ['ret' => 500, 'data' => null, 'msg' => $msg];
-                    Response::getInstance()->clear()->contentType('application/json')->write(json_encode($json, JSON_UNESCAPED_UNICODE))->send();
-                } catch (\Exception $ex) {
-                    exit($msg);
-                }
-                break;
-            case E_WARNING:
-                // 记录到日志
-                $errnostr = isset($errortype[$errno]) ? $errortype[$errno] : 'Unknonw';
-                $s = "[{$errnostr}] : {$errstr} in File {$errfile}, Line: {$errline}";
-                Log::write($s, Log::WARN);
-                break;
-            case E_NOTICE:
-                // 记录到日志
-                $errnostr = isset($errortype[$errno]) ? $errortype[$errno] : 'Unknonw';
-                $s = "[{$errnostr}] : {$errstr} in File {$errfile}, Line: {$errline}";
-                Log::write($s, Log::NOTICE);
-                break;
-            default:
-                break;
-        }
-        return false;
-    }
-
-    /**
-     * 异常处理
-     * @param type $e
-     */
-    public static function exception_handle($e) {
-        $errfile = str_replace($_SERVER['DOCUMENT_ROOT'], '', $e->getFile());
-
-        $msg = $e->getMessage() . ' File: ' . $errfile . ' [' . $e->getLine() . ']';
-        Log::write($msg, Log::EMERG);
-
-        try {
-            $json = ['ret' => $e->getCode(), 'data' => null, 'msg' => $e->getMessage()];
-            Response::getInstance()->clear()->contentType('application/json')->write(json_encode($json, JSON_UNESCAPED_UNICODE))->send();
-        } catch (\Exception $ex) {
-            exit($msg);
-        }
     }
 
     /**

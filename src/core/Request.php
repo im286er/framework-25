@@ -62,42 +62,6 @@ class Request {
     protected $path;
 
     /**
-     * 当前路由信息
-     * @var array
-     */
-    protected $routeInfo = [];
-
-    /**
-     * 当前调度信息
-     * @var array
-     */
-    protected $dispatch = [];
-
-    /**
-     * 当前模块名
-     * @var string
-     */
-    protected $module;
-
-    /**
-     * 当前控制器名
-     * @var string
-     */
-    protected $controller;
-
-    /**
-     * 当前操作名
-     * @var string
-     */
-    protected $action;
-
-    /**
-     * 当前语言集
-     * @var string
-     */
-    protected $langset;
-
-    /**
      * 当前请求参数
      * @var array
      */
@@ -120,12 +84,6 @@ class Request {
      * @var array
      */
     protected $request = [];
-
-    /**
-     * 当前ROUTE参数
-     * @var array
-     */
-    protected $route = [];
 
     /**
      * 当前PUT参数
@@ -234,7 +192,7 @@ class Request {
             array_unshift($args, $this);
             return call_user_func_array($this->hook[$method], $args);
         } else {
-            throw new Exception('method not exists:' . static::class . '->' . $method);
+            throw new Exception('method not exists:' . $method);
         }
     }
 
@@ -273,23 +231,6 @@ class Request {
             return $_SERVER['LOCAL_ADDR'];
         }
         return getenv('SERVER_ADDR');
-    }
-
-    /**
-     * 过滤
-     *
-     * @param  mixed $value
-     * @return mixed
-     */
-    protected function sanitize($value) {
-        foreach ($this->filters as $callable) {
-            $value = is_array($value) ? array_map($callable, $value) : call_user_func($callable, $value);
-        }
-
-        // 清除
-        $this->filters = array();
-
-        return $value;
     }
 
     /**
@@ -371,6 +312,25 @@ class Request {
         }
         if ($is_mac) {
             return 'PC';
+        }
+    }
+
+    /**
+     * 检测是否使用手机访问
+     * @access public
+     * @return bool
+     */
+    public function isMobile() {
+        if (isset($_SERVER['HTTP_VIA']) && stristr($_SERVER['HTTP_VIA'], "wap")) {
+            return true;
+        } elseif (isset($_SERVER['HTTP_ACCEPT']) && strpos(strtoupper($_SERVER['HTTP_ACCEPT']), "VND.WAP.WML")) {
+            return true;
+        } elseif (isset($_SERVER['HTTP_X_WAP_PROFILE']) || isset($_SERVER['HTTP_PROFILE'])) {
+            return true;
+        } elseif (isset($_SERVER['HTTP_USER_AGENT']) && preg_match('/(blackberry|configuration\/cldc|hp |hp-|htc |htc_|htc-|iemobile|kindle|midp|mmp|motorola|mobile|nokia|opera mini|opera |Googlebot-Mobile|YahooSeeker\/M1A1-R2D2|android|iphone|ipod|mobi|palm|palmos|pocket|portalmmm|ppc;|smartphone|sonyericsson|sqh|spv|symbian|treo|up.browser|up.link|vodafone|windows ce|xda |xda_)/i', $_SERVER['HTTP_USER_AGENT'])) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -890,7 +850,7 @@ class Request {
             }
 
             // 当前请求参数和URL地址中的参数合并
-            $this->param = array_merge($this->get(false), $vars, $this->route(false));
+            $this->param = array_merge($this->get(false), $vars);
         }
 
         if (true === $name) {
@@ -901,23 +861,6 @@ class Request {
         }
 
         return $this->input($this->param, $name, $default, $filter);
-    }
-
-    /**
-     * 设置获取路由参数
-     * @access public
-     * @param  mixed         $name 变量名
-     * @param  mixed         $default 默认值
-     * @param  string|array  $filter 过滤方法
-     * @return mixed
-     */
-    public function route($name = '', $default = null, $filter = '') {
-        if (is_array($name)) {
-            $this->param = [];
-            return $this->route = array_merge($this->route, $name);
-        }
-
-        return $this->input($this->route, $name, $default, $filter);
     }
 
     /**
@@ -1566,25 +1509,6 @@ class Request {
     }
 
     /**
-     * 检测是否使用手机访问
-     * @access public
-     * @return bool
-     */
-    public function isMobile() {
-        if (isset($_SERVER['HTTP_VIA']) && stristr($_SERVER['HTTP_VIA'], "wap")) {
-            return true;
-        } elseif (isset($_SERVER['HTTP_ACCEPT']) && strpos(strtoupper($_SERVER['HTTP_ACCEPT']), "VND.WAP.WML")) {
-            return true;
-        } elseif (isset($_SERVER['HTTP_X_WAP_PROFILE']) || isset($_SERVER['HTTP_PROFILE'])) {
-            return true;
-        } elseif (isset($_SERVER['HTTP_USER_AGENT']) && preg_match('/(blackberry|configuration\/cldc|hp |hp-|htc |htc_|htc-|iemobile|kindle|midp|mmp|motorola|mobile|nokia|opera mini|opera |Googlebot-Mobile|YahooSeeker\/M1A1-R2D2|android|iphone|ipod|mobi|palm|palmos|pocket|portalmmm|ppc;|smartphone|sonyericsson|sqh|spv|symbian|treo|up.browser|up.link|vodafone|windows ce|xda |xda_)/i', $_SERVER['HTTP_USER_AGENT'])) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
      * 当前URL地址中的scheme参数
      * @access public
      * @return string
@@ -1660,94 +1584,6 @@ class Request {
         }
 
         return '';
-    }
-
-    /**
-     * 获取当前请求的路由信息
-     * @access public
-     * @param  array $route 路由名称
-     * @return array
-     */
-    public function routeInfo($route = []) {
-        if (!empty($route)) {
-            $this->routeInfo = $route;
-        } else {
-            return $this->routeInfo;
-        }
-    }
-
-    /**
-     * 设置或者获取当前请求的调度信息
-     * @access public
-     * @param  array  $dispatch 调度信息
-     * @return array
-     */
-    public function dispatch($dispatch = null) {
-        if (!is_null($dispatch)) {
-            $this->dispatch = $dispatch;
-        }
-
-        return $this->dispatch;
-    }
-
-    /**
-     * 设置或者获取当前的模块名
-     * @access public
-     * @param  string $module 模块名
-     * @return string|Request
-     */
-    public function module($module = null) {
-        if (!is_null($module)) {
-            $this->module = $module;
-            return $this;
-        } else {
-            return $this->module ?: '';
-        }
-    }
-
-    /**
-     * 设置或者获取当前的控制器名
-     * @access public
-     * @param  string $controller 控制器名
-     * @return string|Request
-     */
-    public function controller($controller = null) {
-        if (!is_null($controller)) {
-            $this->controller = $controller;
-            return $this;
-        } else {
-            return $this->controller ?: '';
-        }
-    }
-
-    /**
-     * 设置或者获取当前的操作名
-     * @access public
-     * @param  string $action 操作名
-     * @return string|Request
-     */
-    public function action($action = null) {
-        if (!is_null($action)) {
-            $this->action = $action;
-            return $this;
-        } else {
-            return $this->action ?: '';
-        }
-    }
-
-    /**
-     * 设置或者获取当前的语言
-     * @access public
-     * @param  string $lang 语言名
-     * @return string|Request
-     */
-    public function langset($lang = null) {
-        if (!is_null($lang)) {
-            $this->langset = $lang;
-            return $this;
-        } else {
-            return $this->langset ?: '';
-        }
     }
 
     /**
