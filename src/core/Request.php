@@ -289,10 +289,13 @@ class Request {
      * @return string
      */
     public function equipment() {
-        if (empty($_SERVER['HTTP_USER_AGENT'])) {
+        $agent = $this->get_user_agent();
+
+        if (empty($agent)) {
             return 'Unknown';
         }
-        $agent = strtolower($_SERVER['HTTP_USER_AGENT']);
+
+        $agent = strtolower($agent);
         $is_pc = (strpos($agent, 'windows nt')) ? true : false;
         $is_mac = (strpos($agent, 'mac os')) ? true : false;
         $is_iphone = (strpos($agent, 'iphone')) ? true : false;
@@ -339,11 +342,15 @@ class Request {
      * @return boolean
      */
     public function isWeixin() {
-        if (isset($_SERVER['HTTP_USER_AGENT'])) {
-            if (strpos($_SERVER['HTTP_USER_AGENT'], 'MicroMessenger') !== false) {
-                return true;
-            }
+        $agent = $this->get_user_agent();
+        if (empty($agent)) {
+            return false;
         }
+
+        if (strpos($agent, 'MicroMessenger') !== false) {
+            return true;
+        }
+
         return false;
     }
 
@@ -352,11 +359,15 @@ class Request {
      * @return boolean
      */
     public function isApp() {
-        if (isset($_SERVER['HTTP_USER_AGENT'])) {
-            if (strpos($_SERVER['HTTP_USER_AGENT'], 'app') !== false) {
-                return true;
-            }
+        $agent = $this->get_user_agent();
+        if (empty($agent)) {
+            return false;
         }
+
+        if (strpos($agent, 'app') !== false) {
+            return true;
+        }
+
         return false;
     }
 
@@ -364,13 +375,16 @@ class Request {
      * 判断是否为蜘蛛抓取网站
      */
     public function isRobot() {
-        if (isset($_SERVER['HTTP_USER_AGENT'])) {
-            $agent = strtolower($_SERVER['HTTP_USER_AGENT']);
-            $keys = array('bot', 'slurp', 'spider', 'crawl', 'curl');
-            foreach ($keys as $key) {
-                if (strpos($agent, $key) !== false) {
-                    return true;
-                }
+        $agent = $this->get_user_agent();
+        if (empty($agent)) {
+            return false;
+        }
+
+        $agent = strtolower($agent);
+        $keys = array('bot', 'slurp', 'spider', 'crawl', 'curl');
+        foreach ($keys as $key) {
+            if (strpos($agent, $key) !== false) {
+                return true;
             }
         }
         return false;
