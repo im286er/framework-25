@@ -27,7 +27,7 @@ class Mysql extends DbDriver {
         try {
             $this->link = new \PDO($this->db_config['dsn'], $this->db_config['username'], $this->db_config['password'], [\PDO::ATTR_CASE => \PDO::CASE_NATURAL]);
             $this->link->exec('SET QUOTED_IDENTIFIER ON');
-            $this->link->exec('SET NAMES utf8mb4');
+//            $this->link->exec('SET NAMES utf8mb4');
             $this->link->exec("SET ANSI_WARNINGS ON");
             $this->link->exec("SET ANSI_PADDING ON");
             $this->link->exec("SET ANSI_NULLS ON");
