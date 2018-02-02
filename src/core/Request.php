@@ -285,40 +285,6 @@ class Request {
     }
 
     /**
-     * 客户端类型
-     * @return string
-     */
-    public function equipment() {
-        $agent = $this->get_user_agent();
-
-        if (empty($agent)) {
-            return 'Unknown';
-        }
-
-        $agent = strtolower($agent);
-        $is_pc = (strpos($agent, 'windows nt')) ? true : false;
-        $is_mac = (strpos($agent, 'mac os')) ? true : false;
-        $is_iphone = (strpos($agent, 'iphone')) ? true : false;
-        $is_android = (strpos($agent, 'android')) ? true : false;
-        $is_ipad = (strpos($agent, 'ipad')) ? true : false;
-        if ($is_ipad) {
-            return 'Pad';
-        }
-        if ($is_iphone) {
-            return 'Mobile';
-        }
-        if ($is_android) {
-            return 'Mobile';
-        }
-        if ($is_pc) {
-            return 'PC';
-        }
-        if ($is_mac) {
-            return 'PC';
-        }
-    }
-
-    /**
      * 检测是否使用手机访问
      * @access public
      * @return bool
@@ -1004,8 +970,9 @@ class Request {
      * @return mixed
      */
     public function session($name = '', $default = null, $filter = '') {
+       
         if (empty($this->session)) {
-            $this->session = Container::get('session')->get();
+            $this->session = Session::getInstance()->get();
         }
 
         if (is_array($name)) {
@@ -1024,7 +991,7 @@ class Request {
      * @return mixed
      */
     public function cookie($name = '', $default = null, $filter = '') {
-        $cookie = Container::get('cookie');
+        $cookie = Cookie::getInstance();
 
         if (empty($this->cookie)) {
             $this->cookie = $cookie->get();
