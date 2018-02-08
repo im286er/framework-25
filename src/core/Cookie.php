@@ -225,7 +225,7 @@ class Cookie {
         $prefix = !is_null($prefix) ? $prefix : $config['prefix'];
 
         if ($prefix) {
-            // 如果前缀为空字符串将不作处理直接返回
+            /* 有前缀 */
             foreach ($_COOKIE as $key => $val) {
                 if (0 === strpos($key, $prefix)) {
                     if ($config['setcookie']) {
@@ -233,6 +233,16 @@ class Cookie {
                     }
                     unset($_COOKIE[$key]);
                 }
+            }
+        }
+
+        if (empty($prefix)) {
+            /* 无差别清除 cookie */
+            foreach ($_COOKIE as $key => $val) {
+                if ($config['setcookie']) {
+                    setcookie($key, '', $_SERVER['REQUEST_TIME'] - 3600, $config['path'], $config['domain'], $config['secure'], $config['httponly']);
+                }
+                unset($_COOKIE[$key]);
             }
         }
 
