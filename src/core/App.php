@@ -20,10 +20,11 @@ class App {
      * 应用程序初始化
      */
     public function init() {
-        /* 异常处理类 */
-        set_exception_handler("\\framework\\core\\ErrorOrException::AppException");
+
         /* 自定义错误处理函数，设置后 error_reporting 将失效。因为要保证 ajax 输出格式，所以必须触发 error_handle */
         set_error_handler("\\framework\\core\\ErrorOrException::ErrorHandle");
+        /* 异常处理类 */
+        set_exception_handler("\\framework\\core\\ErrorOrException::AppException");
         /* 设置自定义捕获致命异常函数 */
         register_shutdown_function("\\framework\\core\\ErrorOrException::FatalError");
 
@@ -217,7 +218,8 @@ class App {
         if (!class_exists($class_name)) {
             $class_name = $this->app_name . "\\action\\_empty";
             if (!class_exists($class_name)) {
-                return ['ret' => 404, 'data' => null, 'msg' => "404 Not Found"];
+                /* 显示 404 页面 */
+                ErrorOrException::show_404();
             }
         }
 
@@ -226,7 +228,8 @@ class App {
             if (is_callable([$module, '_empty'])) {
                 $action = '_empty';
             } else {
-                return ['ret' => 404, 'data' => null, 'msg' => "404 Not Found"];
+                /* 显示 404 页面 */
+                ErrorOrException::show_404();
             }
         }
 
@@ -241,7 +244,7 @@ class App {
                 throw new \ReflectionException();
             }
         } catch (\ReflectionException $e) {
-            return ['ret' => 500, 'data' => null, 'msg' => $e->getTraceAsString()];
+            throw new Exception($e->getTraceAsString(), 500);
         }
 
         return false;

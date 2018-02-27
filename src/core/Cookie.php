@@ -11,8 +11,8 @@ class Cookie {
     protected $config = [
         // cookie 名称前缀
         'prefix' => '',
-        // cookie 保存时间 15 天
-        'expire' => 1296000,
+        // cookie 保存时间 7 天
+        'expire' => 604800,
         // cookie 保存路径
         'path' => '/',
         // cookie 有效域名
