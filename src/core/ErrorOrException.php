@@ -118,7 +118,7 @@ class ErrorOrException {
         $heading = '404 Page Not Found';
         $message = 'The page you requested was not found.';
 
-        echo self::show_error($heading, $message, 'error_404', 404);
+        self::show_error($heading, $message, 'error_404', 404);
         exit(4);
     }
 
