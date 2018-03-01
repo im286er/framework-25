@@ -456,6 +456,84 @@ class Redis {
     }
 
     /**
+     * 从队列尾部加入
+     * @param type $name
+     * @param type $data
+     * @return type
+     */
+    public function queue_push($name = 'task_queue', $data = []) {
+
+        $data = is_scalar($data) ? $data : 'serialize:' . serialize($data);
+
+        return $this->link->rPush($name, $data);
+    }
+
+    /**
+     * 从队列首部弹出
+     * @param type $name
+     * @return boolean
+     */
+    public function queue_pop($name = 'task_queue') {
+        $value = $this->link->lPop($name);
+        if (is_null($value) || false === $value) {
+            return false;
+        }
+        try {
+            $result = 0 === strpos($value, 'serialize:') ? unserialize(substr($value, 10)) : $value;
+        } catch (\Exception $e) {
+            $result = false;
+        }
+        return $result;
+    }
+
+    /**
+     * 从队列首部弹出多个
+     * @param type $name
+     * @param type $size
+     * @return boolean
+     */
+    public function queue_multi_pop($name = 'task_queue', $size = 1) {
+        if ($size == 1) {
+            return $this->queue_pop($name);
+        }
+
+        $total = $this->queue_size($name);
+        if ($total == 0) {
+            return false;
+        }
+
+        $max = min($size, $total);
+
+        $data = [];
+
+        for ($i = 0; $i < $max; $i++) {
+            $value = $this->queue_pop($name);
+            if ($value) {
+                $data[$i] = $value;
+            }
+        }
+
+        if (empty($data)) {
+            return false;
+        }
+
+        return $data;
+    }
+
+    /**
+     * 查看队列数量
+     * @param type $name
+     * @return int
+     */
+    public function queue_size($name = 'task_queue') {
+        $rs = $this->link->lLen($name);
+        if ($rs) {
+            return $rs;
+        }
+        return 0;
+    }
+
+    /**
      * 获取状态
      * @return type
      */
