@@ -16,8 +16,8 @@ class Session {
      * @return void
      */
     public function init() {
-        /* 采用 memcached 保存 session */
-        session_set_save_handler(new \framework\session\memcacheDriver());
+        /* 采用 NoSQL 保存 session */
+        session_set_save_handler(new \framework\session\RedisDriver());
 
         /* 启动session */
         session_start();
