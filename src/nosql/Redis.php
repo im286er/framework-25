@@ -86,13 +86,14 @@ class Redis {
      */
     public function is_available() {
         if (!$this->isConnected && $this->reConnected < $this->maxReConnected) {
-
-            if ($this->link->info() !== false) {
-                $this->isConnected = true;
-            } else {
+            try {
+                if ($this->link->ping() == '+PONG') {
+                    $this->isConnected = true;
+                }
+            } catch (\RedisException $ex) {
+                /* 记录连接异常 */
                 $this->connect();
             }
-
             if (!$this->isConnected) {
                 $this->reConnected++;
             }
@@ -102,6 +103,21 @@ class Redis {
             }
         }
         return $this->isConnected;
+    }
+
+    /**
+     * 调用 Redis 自带方法
+     * @param type $method
+     * @param type $args
+     * @return type
+     * @throws \Exception
+     */
+    public function __call($method, $args) {
+        if (method_exists($this->link, $method)) {
+            return call_user_func_array(array($this->link, $method), $args);
+        } else {
+            throw new \Exception(__CLASS__ . ":{$method} is not exists!");
+        }
     }
 
     public static function getInstance() {
