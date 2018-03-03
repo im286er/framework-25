@@ -6,7 +6,7 @@
 
     <p>Type: <?php echo get_class($exception); ?></p>
     <p>Message: <?php echo $message; ?></p>
-    <p>Filename: <?php echo $exception->getFile(); ?></p>
+    <p>Filename: <?php echo str_replace($_SERVER['DOCUMENT_ROOT'], '', $exception->getFile()); ?></p>
     <p>Line Number: <?php echo $exception->getLine(); ?></p>
 
 </div>
