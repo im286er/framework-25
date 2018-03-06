@@ -363,24 +363,26 @@ class Redis {
         return false;
     }
 
+
     /**
      * 简单获取缓存
-     * @param type $cache_id
-     * @return type
+     * @param type $cache_id    缓存名称
+     * @param type $default     默认返回　false
+     * @return boolean
      */
-    public function simple_get($cache_id) {
+    public function simple_get($cache_id, $default = false) {
         $key = $this->prefix . $cache_id;
         try {
             $value = $this->link->get($key);
 
             if (is_null($value) || false === $value) {
-                return false;
+                return $default;
             }
 
             try {
                 $result = 0 === strpos($value, 'serialize:') ? unserialize(substr($value, 10)) : $value;
             } catch (\Exception $e) {
-                $result = false;
+                $result = $default;
             }
 
             return $result;
