@@ -195,22 +195,24 @@ class Redis {
 
     /**
      * 获取有分组的缓存
-     * @param type $cache_id
-     * @return type
+     * @access public
+     * @param string $cache_id 缓存变量名
+     * @param mixed  $default 默认值
+     * @return mixed
      */
-    public function get($cache_id) {
+    public function get($cache_id, $default = false) {
         try {
             $key = $this->prefix . self::$ver[$this->group] . '_' . $this->group . '_' . $cache_id;
             $value = $this->link->get($key);
 
             if (is_null($value) || false === $value) {
-                return false;
+                return $default;
             }
 
             try {
                 $result = 0 === strpos($value, 'serialize:') ? unserialize(substr($value, 10)) : $value;
             } catch (\Exception $e) {
-                $result = false;
+                $result = $default;
             }
 
             return $result;
