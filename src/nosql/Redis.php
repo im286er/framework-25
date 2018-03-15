@@ -481,7 +481,7 @@ class Redis {
      * @param type $data
      * @return type
      */
-    public function queue_push($name = 'task_queue', $data = []) {
+    public function queue_push($name = 'queue_task', $data = []) {
 
         $data = is_scalar($data) ? $data : 'serialize:' . serialize($data);
 
@@ -493,7 +493,7 @@ class Redis {
      * @param type $name
      * @return boolean
      */
-    public function queue_pop($name = 'task_queue') {
+    public function queue_pop($name = 'queue_task') {
         $value = $this->link->lPop($name);
         if (is_null($value) || false === $value) {
             return false;
@@ -512,7 +512,7 @@ class Redis {
      * @param type $size
      * @return boolean
      */
-    public function queue_multi_pop($name = 'task_queue', $size = 1) {
+    public function queue_multi_pop($name = 'queue_task', $size = 1) {
         if ($size == 1) {
             return $this->queue_pop($name);
         }
@@ -545,7 +545,7 @@ class Redis {
      * @param type $name
      * @return int
      */
-    public function queue_size($name = 'task_queue') {
+    public function queue_size($name = 'queue_task') {
         $rs = $this->link->lLen($name);
         if ($rs) {
             return $rs;
