@@ -175,7 +175,7 @@ class Redis {
      * @return type
      * @return boolean
      */
-    public function clear($group = '_cache_') {
+    public function clear() {
 
         if ($this->tag) {
             // 指定标签清除
@@ -190,24 +190,23 @@ class Redis {
             return true;
         }
 
-        if ($group) {
-            $this->group = $group;
+        if ($this->group) {
+            $key = $this->prefix . '_ver_' . $this->group;
+
+            /* 获取新版本号 */
+            $ver = $this->link->incrby("cache_ver_{$key}", 1);
+            self::$ver[$this->group] = intval($ver);
+
+            try {
+                $this->link->set($key, self::$ver[$this->group]);
+                return self::$ver[$this->group];
+            } catch (\Exception $ex) {
+                //连接状态置为false
+                $this->isConnected = false;
+                $this->is_available();
+            }
         }
 
-        $key = $this->prefix . '_ver_' . $this->group;
-
-        /* 获取新版本号 */
-        $ver = $this->link->incrby("cache_ver_{$key}", 1);
-        self::$ver[$this->group] = intval($ver);
-
-        try {
-            $this->link->set($key, self::$ver[$this->group]);
-            return self::$ver[$this->group];
-        } catch (\Exception $ex) {
-            //连接状态置为false
-            $this->isConnected = false;
-            $this->is_available();
-        }
         return false;
     }
 
@@ -312,8 +311,14 @@ class Redis {
      * @return type
      */
     public function delete($cache_id) {
-        try {
+
+        if ($this->tag) {
+            $key = $this->getCacheKey($cache_id);
+        } else {
             $key = $this->prefix . self::$ver[$this->group] . '_' . $this->group . '_' . $cache_id;
+        }
+
+        try {
             return $this->link->delete($key);
         } catch (\Exception $ex) {
             //连接状态置为false
