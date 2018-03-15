@@ -171,8 +171,9 @@ class Redis {
 
     /**
      * 按分组清空缓存
-     * @param type $group
+     * @param string $group
      * @return type
+     * @return boolean
      */
     public function clear($group = '_cache_') {
 
@@ -184,20 +185,21 @@ class Redis {
                 $this->link->delete($key);
             }
 
-            $this->rm('tag_' . md5($this->tag));
+            $this->simple_delete('tag_' . md5($this->tag));
 
             return true;
         }
 
+        if ($group) {
+            $this->group = $group;
+        }
 
-        $this->group = $group;
         $key = $this->prefix . '_ver_' . $this->group;
 
         /* 获取新版本号 */
         $ver = $this->link->incrby("cache_ver_{$key}", 1);
         self::$ver[$this->group] = intval($ver);
 
-        /* 写入 memcached 新版本号 */
         try {
             $this->link->set($key, self::$ver[$this->group]);
             return self::$ver[$this->group];
@@ -629,7 +631,7 @@ class Redis {
      */
     public function tag($name, $keys = null, $overlay = false) {
         if (is_null($name)) {
-
+            
         } elseif (is_null($keys)) {
             $this->tag = $name;
         } else {
