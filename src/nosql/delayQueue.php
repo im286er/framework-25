@@ -28,7 +28,7 @@ class delayQueue {
      * @param   int         $ttl            延时时间(300秒)
      * @return  int         $id             队列编号
      */
-    public function qpush($queue_name = 'task_queue', $data = [], $ttl = 300) {
+    public function qpush($queue_name = 'queue_task', $data = [], $ttl = 300) {
 
         $zname = "delay_queue_{$queue_name}";
         $hname = "delay_queue_{$queue_name}";
@@ -59,7 +59,7 @@ class delayQueue {
      * @param   int         $size           数量
      * @return boolean/array
      */
-    public function qpop($queue_name = 'task_queue', $size = 1) {
+    public function qpop($queue_name = 'queue_task', $size = 1) {
 
         /* 检查积压数量 */
         $zname = "delay_queue_{$queue_name}";
@@ -118,7 +118,7 @@ class delayQueue {
      * @param   int         $size           数量
      * @return boolean/array
      */
-    public function move_to_queue($queue_name = 'task_queue', $size = 1) {
+    public function move_to_queue($queue_name = 'queue_task', $size = 1) {
 
         /* 检查积压数量 */
         $zname = "delay_queue_{$queue_name}";
@@ -235,7 +235,7 @@ class delayQueue {
      * @param type $queue_name
      * @return int
      */
-    public function size($queue_name = 'task_queue') {
+    public function size($queue_name = 'queue_task') {
         $zname = "delay_queue_{$queue_name}";
         $total = $this->ssdb->zsize($zname);
         if (empty($total)) {

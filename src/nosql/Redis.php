@@ -16,6 +16,7 @@ class Redis {
     private $conf;
     private $group = '_cache_';
     private $prefix = 'vvjob_';
+    private $tag;     /* 缓存标签 */
     private static $ver = [];
     private $link;
 
@@ -174,6 +175,21 @@ class Redis {
      * @return type
      */
     public function clear($group = '_cache_') {
+
+        if ($this->tag) {
+            // 指定标签清除
+            $keys = $this->getTagItem($this->tag);
+
+            foreach ($keys as $key) {
+                $this->link->delete($key);
+            }
+
+            $this->rm('tag_' . md5($this->tag));
+
+            return true;
+        }
+
+
         $this->group = $group;
         $key = $this->prefix . '_ver_' . $this->group;
 
@@ -194,6 +210,26 @@ class Redis {
     }
 
     /**
+     * 获取实际的缓存标识
+     * @access protected
+     * @param  string $name 缓存名
+     * @return string
+     */
+    protected function getCacheKey($name) {
+        return $this->prefix . $name;
+    }
+
+    /**
+     * 判断缓存
+     * @access public
+     * @param  string $name 缓存变量名
+     * @return bool
+     */
+    public function has($name) {
+        return $this->link->get($this->getCacheKey($name)) ? true : false;
+    }
+
+    /**
      * 获取有分组的缓存
      * @access public
      * @param string $cache_id 缓存变量名
@@ -201,8 +237,15 @@ class Redis {
      * @return mixed
      */
     public function get($cache_id, $default = false) {
-        try {
+
+        if ($this->tag) {
+            $key = $this->getCacheKey($cache_id);
+        } else {
             $key = $this->prefix . self::$ver[$this->group] . '_' . $this->group . '_' . $cache_id;
+        }
+
+        try {
+
             $value = $this->link->get($key);
 
             if (is_null($value) || false === $value) {
@@ -232,7 +275,16 @@ class Redis {
      * @return boolean
      */
     public function set($cache_id, $var, $expire = 0) {
-        $key = $this->prefix . self::$ver[$this->group] . '_' . $this->group . '_' . $cache_id;
+
+        if ($this->tag && !$this->has($cache_id)) {
+
+            $key = $this->getCacheKey($cache_id);
+
+            $this->setTagItem($key);
+        } else {
+            $key = $this->prefix . self::$ver[$this->group] . '_' . $this->group . '_' . $cache_id;
+        }
+
 
         $var = is_scalar($var) ? $var : 'serialize:' . serialize($var);
 
@@ -362,7 +414,6 @@ class Redis {
         }
         return false;
     }
-
 
     /**
      * 简单获取缓存
@@ -566,6 +617,83 @@ class Redis {
             $this->is_available();
         }
         return false;
+    }
+
+    /**
+     * 缓存标签
+     * @access public
+     * @param  string        $name 标签名
+     * @param  string|array  $keys 缓存标识
+     * @param  bool          $overlay 是否覆盖
+     * @return $this
+     */
+    public function tag($name, $keys = null, $overlay = false) {
+        if (is_null($name)) {
+
+        } elseif (is_null($keys)) {
+            $this->tag = $name;
+        } else {
+            $key = 'tag_' . md5($name);
+
+            if (is_string($keys)) {
+                $keys = explode(',', $keys);
+            }
+
+            $keys = array_map([$this, 'getCacheKey'], $keys);
+
+            if ($overlay) {
+                $value = $keys;
+            } else {
+                $value = array_unique(array_merge($this->getTagItem($name), $keys));
+            }
+
+            $this->simple_set($key, implode(',', $value), 0);
+        }
+
+        return $this;
+    }
+
+    /**
+     * 更新标签
+     * @access protected
+     * @param  string $name 缓存标识
+     * @return void
+     */
+    protected function setTagItem($name) {
+        if ($this->tag) {
+            $key = 'tag_' . md5($this->tag);
+            $prev = $this->tag;
+            $this->tag = null;
+
+            if ($this->has($key)) {
+                $value = explode(',', $this->simple_get($key));
+                $value[] = $name;
+                $value = implode(',', array_unique($value));
+            } else {
+                $value = $name;
+            }
+
+            $this->simple_set($key, $value, 0);
+
+            $this->tag = $prev;
+        }
+    }
+
+    /**
+     * 获取标签包含的缓存标识
+     * @access protected
+     * @param  string $tag 缓存标签
+     * @return array
+     */
+    protected function getTagItem($tag) {
+        $key = 'tag_' . md5($tag);
+        $value = $this->simple_get($key);
+
+        if ($value) {
+            return array_filter(explode(',', $value));
+        } else {
+            return [];
+        }
     }
 
 }
