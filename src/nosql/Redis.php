@@ -227,7 +227,7 @@ class Redis {
      * @return bool
      */
     public function has($name) {
-        return $this->link->get($this->getCacheKey($name)) ? true : false;
+        return $this->link->exists($this->getCacheKey($name)) ? true : false;
     }
 
     /**
