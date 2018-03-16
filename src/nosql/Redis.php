@@ -15,7 +15,7 @@ class Redis {
 
     private $conf;
     private $group = '_cache_';
-    private $prefix = 'vvjob_';
+    private $prefix = 'guipin_';
     private $tag;     /* 缓存标签 */
     private static $ver = [];
     private $link;
@@ -37,7 +37,7 @@ class Redis {
      */
     private $maxReConnected = 3;
 
-    public function __construct() {
+    public function __construct($option) {
 
         if (!extension_loaded('redis')) {
             throw new Exception('当前环境不支持: redis');
@@ -48,6 +48,13 @@ class Redis {
         if (empty($this->conf)) {
             throw new Exception('请配置 redis !');
         }
+
+        if (!empty($option)) {
+            if (isset($option['prefix'])) {
+                $this->prefix = $option['prefix'];
+            }
+        }
+
 
         $this->connect();
     }
@@ -121,12 +128,14 @@ class Redis {
         }
     }
 
-    public static function getInstance() {
-        static $obj;
-        if (!$obj) {
-            $obj = new self();
+    public static function getInstance($option = null) {
+        static $obj = [];
+        $key = serialize($option);
+        $key = md5($key);
+        if (!isset($obj[$key])) {
+            $obj[$key] = new self($option);
         }
-        return $obj;
+        return $obj[$key];
     }
 
     /**
