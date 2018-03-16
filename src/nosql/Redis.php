@@ -185,7 +185,7 @@ class Redis {
                 $this->link->delete($key);
             }
 
-            $key = $this->getCacheKey('tag_' . md5($this->tag));
+            $key = $this->getCacheKey('hash_tag_' . md5($this->tag));
             $this->link->delete($key);
 
             return true;
@@ -278,7 +278,7 @@ class Redis {
      */
     public function set($cache_id, $var, $expire = 0) {
 
-        if ($this->tag && !$this->has($cache_id)) {
+        if ($this->tag) {
 
             $key = $this->getCacheKey($cache_id);
 
@@ -316,8 +316,7 @@ class Redis {
         if ($this->tag) {
             $key = $this->getCacheKey($cache_id);
 
-            $this->link->hDel($this->getCacheKey('tag_' . md5($this->tag)), $key);
-            
+            $this->link->hDel($this->getCacheKey('hash_tag_' . md5($this->tag)), $key);
         } else {
             $key = $this->prefix . self::$ver[$this->group] . '_' . $this->group . '_' . $cache_id;
         }
@@ -486,7 +485,7 @@ class Redis {
         $timestamp = time();
         $expire = intval($timestamp / $period) * $period + $period;
         $ttl = $expire - $timestamp;
-        $key = "act_limit|{$uid}|{$action}";
+        $key = "act_limit_" . md5("{$uid}|{$action}");
         try {
             $count = $this->link->get($key);
             if ($count) {
@@ -650,7 +649,7 @@ class Redis {
 
             $keys = array_map([$this, 'getCacheKey'], $keys);
 
-            $key = $this->getCacheKey('tag_' . md5($name));
+            $key = $this->getCacheKey('hash_tag_' . md5($name));
 
             if ($keys) {
                 foreach ($keys as $value) {
@@ -670,7 +669,7 @@ class Redis {
      */
     protected function setTagItem($name) {
         if ($this->tag) {
-            $key = $this->getCacheKey('tag_' . md5($this->tag));
+            $key = $this->getCacheKey('hash_tag_' . md5($this->tag));
 
             $this->link->hSet($key, $name, time());
         }
@@ -683,7 +682,7 @@ class Redis {
      * @return array
      */
     protected function getTagItem($tag) {
-        $key = $this->getCacheKey('tag_' . md5($tag));
+        $key = $this->getCacheKey('hash_tag_' . md5($tag));
 
         return $this->link->hKeys($key);
     }
