@@ -185,7 +185,8 @@ class Redis {
                 $this->link->delete($key);
             }
 
-            $this->simple_delete('tag_' . md5($this->tag));
+            $key = $this->getCacheKey('tag_' . md5($this->tag));
+            $this->link->delete($key);
 
             return true;
         }
@@ -314,6 +315,9 @@ class Redis {
 
         if ($this->tag) {
             $key = $this->getCacheKey($cache_id);
+
+            $this->link->hDel($this->getCacheKey('tag_' . md5($this->tag)), $key);
+            
         } else {
             $key = $this->prefix . self::$ver[$this->group] . '_' . $this->group . '_' . $cache_id;
         }
@@ -631,16 +635,14 @@ class Redis {
      * @access public
      * @param  string        $name 标签名
      * @param  string|array  $keys 缓存标识
-     * @param  bool          $overlay 是否覆盖
      * @return $this
      */
-    public function tag($name, $keys = null, $overlay = false) {
+    public function tag($name, $keys = null) {
         if (is_null($name)) {
             
         } elseif (is_null($keys)) {
             $this->tag = $name;
         } else {
-            $key = 'tag_' . md5($name);
 
             if (is_string($keys)) {
                 $keys = explode(',', $keys);
@@ -648,13 +650,13 @@ class Redis {
 
             $keys = array_map([$this, 'getCacheKey'], $keys);
 
-            if ($overlay) {
-                $value = $keys;
-            } else {
-                $value = array_unique(array_merge($this->getTagItem($name), $keys));
-            }
+            $key = $this->getCacheKey('tag_' . md5($name));
 
-            $this->simple_set($key, implode(',', $value), 0);
+            if ($keys) {
+                foreach ($keys as $value) {
+                    $this->link->hSet($key, $value, time());
+                }
+            }
         }
 
         return $this;
@@ -668,21 +670,9 @@ class Redis {
      */
     protected function setTagItem($name) {
         if ($this->tag) {
-            $key = 'tag_' . md5($this->tag);
-            $prev = $this->tag;
-            $this->tag = null;
+            $key = $this->getCacheKey('tag_' . md5($this->tag));
 
-            if ($this->has($key)) {
-                $value = explode(',', $this->simple_get($key));
-                $value[] = $name;
-                $value = implode(',', array_unique($value));
-            } else {
-                $value = $name;
-            }
-
-            $this->simple_set($key, $value, 0);
-
-            $this->tag = $prev;
+            $this->link->hSet($key, $name, time());
         }
     }
 
@@ -693,14 +683,9 @@ class Redis {
      * @return array
      */
     protected function getTagItem($tag) {
-        $key = 'tag_' . md5($tag);
-        $value = $this->simple_get($key);
+        $key = $this->getCacheKey('tag_' . md5($tag));
 
-        if ($value) {
-            return array_filter(explode(',', $value));
-        } else {
-            return [];
-        }
+        return $this->link->hKeys($key);
     }
 
 }
