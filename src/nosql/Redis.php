@@ -15,7 +15,7 @@ class Redis {
 
     private $conf;
     private $group = '_cache_';
-    private $prefix = 'guipin_';
+    private $prefix = 'vvjob_';
     private $tag;     /* 缓存标签 */
     private static $ver = [];
     private $link;
@@ -57,6 +57,16 @@ class Redis {
 
 
         $this->connect();
+    }
+
+    public static function getInstance($option = ['prefix' => 'vvjob_']) {
+        static $obj = [];
+        $key = serialize($option);
+        $key = md5($key);
+        if (!isset($obj[$key])) {
+            $obj[$key] = new self($option);
+        }
+        return $obj[$key];
     }
 
     private function connect() {
@@ -126,16 +136,6 @@ class Redis {
         } else {
             throw new \Exception(__CLASS__ . ":{$method} is not exists!");
         }
-    }
-
-    public static function getInstance($option = null) {
-        static $obj = [];
-        $key = serialize($option);
-        $key = md5($key);
-        if (!isset($obj[$key])) {
-            $obj[$key] = new self($option);
-        }
-        return $obj[$key];
     }
 
     /**
@@ -647,7 +647,7 @@ class Redis {
      */
     public function tag($name, $keys = null) {
         if (is_null($name)) {
-            
+
         } elseif (is_null($keys)) {
             $this->tag = $name;
         } else {
