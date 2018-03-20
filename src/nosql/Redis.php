@@ -2,12 +2,12 @@
 
 namespace framework\nosql;
 
-use framework\core\Log;
 use framework\core\Config;
 use framework\core\Exception;
 
 /**
- * Redis缓存驱动，适合单机部署、有前端代理实现高可用的场景
+ * Redis缓存驱动，适合单机部署、有前端代理实现高可用的场景，性能最好
+ * 有需要在业务层实现读写分离、或者使用RedisCluster的需求，请使用Redisd驱动
  *
  * 要求安装phpredis扩展：https://github.com/phpredis/phpredis/
  */
@@ -17,7 +17,7 @@ class Redis {
     private $group = '_cache_';
     private $prefix = 'vvjob_';
     private $tag;     /* 缓存标签 */
-    private static $ver = [];
+    private $ver;
     private $link;
 
     /**
@@ -37,11 +37,6 @@ class Redis {
      */
     private $maxReConnected = 3;
 
-    /**
-     * 初始化
-     * @param type $option
-     * @throws Exception
-     */
     public function __construct($option) {
 
         if (!extension_loaded('redis')) {
@@ -59,6 +54,7 @@ class Redis {
                 $this->prefix = $option['prefix'];
             }
         }
+
 
         $this->connect();
     }
@@ -90,14 +86,15 @@ class Redis {
             $this->link->select($this->conf['select']);
         }
 
-        /* 测试服务是否可用 */
-        $this->isConnected = false;
+        //如果获取服务器池的统计信息返回false,说明服务器池中有不可用服务器
         try {
-            if ($this->link->ping() == '+PONG') {
+            if ($this->link->info() === false) {
+                $this->isConnected = false;
+            } else {
                 $this->isConnected = true;
             }
         } catch (\Exception $ex) {
-            Log::emerg("{$this->conf['host']} Redis 服务不可用 " . $ex->getMessage());
+            $this->isConnected = false;
         }
     }
 
@@ -147,38 +144,28 @@ class Redis {
      * @return $this
      */
     public function group($group = '_cache_') {
+
         $this->group = $group;
-        /* 命令行下，不能采用静态变量缓存 */
-        if (php_sapi_name() == "cli") {
-            self::$ver[$this->group] = $this->getVer();
-            return $this;
-        }
-        if (empty(self::$ver[$this->group])) {
-            self::$ver[$this->group] = $this->getVer();
-        }
-        return $this;
-    }
 
-    private function getVer() {
+        $key = '_ver_' . $this->group;
+        $key = $this->getCacheKey($key);
+
         try {
-            /* 获取现在的版本号 */
-            $key = $this->getCacheKey("ver_{$this->group}");
-            $ver = $this->link->get($key);
-
-            if (empty($ver)) {
-                /* 初始化版本为 1 */
-                self::$ver[$this->group] = $this->link->incrby($key, 1);
-            } else {
-                /* 正常返回 */
-                self::$ver[$this->group] = intval($ver);
+            /* 获取版本号 */
+            $this->ver = $this->link->get($key);
+            if (empty($this->ver)) {
+                /* 设置版本号 */
+                $this->ver = $this->link->incrby("cache_ver_{$key}", 1);
             }
-            return self::$ver[$this->group];
         } catch (\Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
+            /* 出错 */
+            $this->ver = 0;
         }
-        return 0;
+
+        return $this;
     }
 
     /**
@@ -197,7 +184,6 @@ class Redis {
                 $this->link->delete($key);
             }
 
-            /* 删除缓存 keys 列表 */
             $key = $this->getCacheKey('hash_tag_' . md5($this->tag));
             $this->link->delete($key);
 
@@ -205,13 +191,11 @@ class Redis {
         }
 
         if ($this->group) {
-
+            $key = $this->getCacheKey('_ver_' . $this->group);
             try {
                 /* 获取新版本号 */
-                $key = $this->getCacheKey("ver_{$this->group}");
-                self::$ver[$this->group] = $this->link->incrby($key, 1);
-                /* 返回新版本号 */
-                return self::$ver[$this->group];
+                $this->ver = $this->link->incrby("cache_ver_{$key}", 1);
+                return $this->ver;
             } catch (\Exception $ex) {
                 //连接状态置为false
                 $this->isConnected = false;
@@ -254,7 +238,7 @@ class Redis {
         if ($this->tag) {
             $key = $this->getCacheKey($cache_id);
         } else {
-            $key = $this->getCacheKey(self::$ver[$this->group] . '_' . $this->group . '_' . $cache_id);
+            $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
         }
 
         try {
@@ -295,7 +279,7 @@ class Redis {
 
             $this->setTagItem($key);
         } else {
-            $key = $this->getCacheKey(self::$ver[$this->group] . '_' . $this->group . '_' . $cache_id);
+            $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
         }
 
 
@@ -326,10 +310,10 @@ class Redis {
 
         if ($this->tag) {
             $key = $this->getCacheKey($cache_id);
-            /* 从 keys 列表中删除 */
+
             $this->link->hDel($this->getCacheKey('hash_tag_' . md5($this->tag)), $key);
         } else {
-            $key = $this->getCacheKey(self::$ver[$this->group] . '_' . $this->group . '_' . $cache_id);
+            $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
         }
 
         try {
@@ -384,7 +368,7 @@ class Redis {
     public function is_lock($cache_id) {
         $key = "lock_{$cache_id}";
         try {
-            return $this->link->exists($key) ? true : false;
+            return (boolean) $this->link->get($key);
         } catch (\Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -649,16 +633,20 @@ class Redis {
      */
     public function tag($name, $keys = null) {
         if (is_null($name)) {
-
+            
         } elseif (is_null($keys)) {
             $this->tag = $name;
         } else {
+
             if (is_string($keys)) {
                 $keys = explode(',', $keys);
             }
+
+            $keys = array_map([$this, 'getCacheKey'], $keys);
+
+            $key = $this->getCacheKey('hash_tag_' . md5($name));
+
             if ($keys) {
-                $keys = array_map([$this, 'getCacheKey'], $keys);
-                $key = $this->getCacheKey('hash_tag_' . md5($name));
                 foreach ($keys as $value) {
                     $this->link->hSet($key, $value, time());
                 }
@@ -677,6 +665,7 @@ class Redis {
     protected function setTagItem($name) {
         if ($this->tag) {
             $key = $this->getCacheKey('hash_tag_' . md5($this->tag));
+
             $this->link->hSet($key, $name, time());
         }
     }
@@ -689,6 +678,7 @@ class Redis {
      */
     protected function getTagItem($tag) {
         $key = $this->getCacheKey('hash_tag_' . md5($tag));
+
         return $this->link->hKeys($key);
     }
 
