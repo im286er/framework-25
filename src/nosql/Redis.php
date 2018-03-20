@@ -147,16 +147,17 @@ class Redis {
 
         $this->group = $group;
 
-        $key = '_ver_' . $this->group;
+        $key = 'cache_ver_' . $this->group;
         $key = $this->getCacheKey($key);
 
         try {
             /* 获取版本号 */
             $this->ver = $this->link->get($key);
-            if (empty($this->ver)) {
-                /* 设置版本号 */
-                $this->ver = $this->link->incrby("cache_ver_{$key}", 1);
+            if ($this->ver) {
+                return $this;
             }
+            /* 设置版本号 */
+            $this->ver = $this->link->incrby($key, 1);
         } catch (\Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -191,10 +192,11 @@ class Redis {
         }
 
         if ($this->group) {
-            $key = $this->getCacheKey('_ver_' . $this->group);
+            $key = 'cache_ver_' . $this->group;
+            $key = $this->getCacheKey($key);
             try {
                 /* 获取新版本号 */
-                $this->ver = $this->link->incrby("cache_ver_{$key}", 1);
+                $this->ver = $this->link->incrby($key, 1);
                 return $this->ver;
             } catch (\Exception $ex) {
                 //连接状态置为false
@@ -633,7 +635,7 @@ class Redis {
      */
     public function tag($name, $keys = null) {
         if (is_null($name)) {
-            
+
         } elseif (is_null($keys)) {
             $this->tag = $name;
         } else {
