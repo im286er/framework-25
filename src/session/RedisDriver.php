@@ -9,7 +9,7 @@ use framework\nosql\Redis;
  */
 class RedisDriver extends \SessionHandler {
 
-    private $_expiration = 28800;       /* 8小时 */
+    private $_expiration = 7200;       /* 2小时 */
 
     public function open($savePath, $sessionName) {
         return true;
