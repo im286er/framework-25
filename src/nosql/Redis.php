@@ -188,7 +188,7 @@ class Redis {
             $key = $this->getCacheKey('hash_tag_' . md5($this->tag));
             $this->link->delete($key);
 
-            return true;
+            $this->tag = null;
         }
 
         if ($this->group) {
@@ -197,6 +197,9 @@ class Redis {
             try {
                 /* 获取新版本号 */
                 $this->ver = $this->link->incrby($key, 1);
+
+                $this->group = null;
+
                 return $this->ver;
             } catch (\Exception $ex) {
                 //连接状态置为false
@@ -205,7 +208,7 @@ class Redis {
             }
         }
 
-        return false;
+        return true;
     }
 
     /**
@@ -635,7 +638,7 @@ class Redis {
      */
     public function tag($name, $keys = null) {
         if (is_null($name)) {
-
+            
         } elseif (is_null($keys)) {
             $this->tag = $name;
         } else {
