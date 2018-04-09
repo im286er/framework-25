@@ -177,7 +177,7 @@ class Redis {
      */
     public function clear() {
 
-        if ($this->tag) {
+        if (!empty($this->tag)) {
             // 指定标签清除
             $keys = $this->getTagItem($this->tag);
 
@@ -185,13 +185,13 @@ class Redis {
                 $this->link->delete($key);
             }
 
-            $key = $this->getCacheKey('hash_tag_' . md5($this->tag));
-            $this->link->delete($key);
+//            $key = $this->getCacheKey('hash_tag_' . md5($this->tag));
+//            $this->link->delete($key);
 
             $this->tag = null;
         }
 
-        if ($this->group) {
+        if (!empty($this->group)) {
             $key = 'cache_ver_' . $this->group;
             $key = $this->getCacheKey($key);
             try {
@@ -222,16 +222,6 @@ class Redis {
     }
 
     /**
-     * 判断缓存
-     * @access public
-     * @param  string $name 缓存变量名
-     * @return bool
-     */
-    public function has($name) {
-        return $this->link->exists($this->getCacheKey($name)) ? true : false;
-    }
-
-    /**
      * 获取有分组的缓存
      * @access public
      * @param string $cache_id 缓存变量名
@@ -240,8 +230,9 @@ class Redis {
      */
     public function get($cache_id, $default = false) {
 
-        if ($this->tag) {
+        if (!empty($this->tag)) {
             $key = $this->getCacheKey($cache_id);
+            $this->tag = null;
         } else {
             $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
         }
@@ -255,7 +246,7 @@ class Redis {
             }
 
             try {
-                $result = 0 === strpos($value, 'serialize:') ? unserialize(substr($value, 10)) : $value;
+                $result = (0 === strpos($value, 'serialize:')) ? unserialize(substr($value, 10)) : $value;
             } catch (\Exception $e) {
                 $result = $default;
             }
@@ -278,11 +269,10 @@ class Redis {
      */
     public function set($cache_id, $var, $expire = 0) {
 
-        if ($this->tag) {
-
+        if (!empty($this->tag)) {
             $key = $this->getCacheKey($cache_id);
-
             $this->setTagItem($key);
+            $this->tag = null;
         } else {
             $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
         }
@@ -313,10 +303,10 @@ class Redis {
      */
     public function delete($cache_id) {
 
-        if ($this->tag) {
+        if (!empty($this->tag)) {
             $key = $this->getCacheKey($cache_id);
-
             $this->link->hDel($this->getCacheKey('hash_tag_' . md5($this->tag)), $key);
+            $this->tag = null;
         } else {
             $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
         }
@@ -668,7 +658,7 @@ class Redis {
      * @return void
      */
     protected function setTagItem($name) {
-        if ($this->tag) {
+        if (!empty($this->tag)) {
             $key = $this->getCacheKey('hash_tag_' . md5($this->tag));
 
             $this->link->hSet($key, $name, time());
