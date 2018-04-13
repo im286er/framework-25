@@ -180,13 +180,14 @@ class Redis {
         if (!empty($this->tag)) {
             // 指定标签清除
             $keys = $this->getTagItem($this->tag);
-
-            foreach ($keys as $key) {
-                $this->link->delete($key);
+            if ($keys) {
+                foreach ($keys as $key) {
+                    $this->link->delete($key);
+                }
             }
 
-//            $key = $this->getCacheKey('hash_tag_' . md5($this->tag));
-//            $this->link->delete($key);
+            $key = $this->getCacheKey('hash_tag_' . md5($this->tag));
+            $this->link->delete($key);
 
             $this->tag = null;
         }
@@ -628,7 +629,7 @@ class Redis {
      */
     public function tag($name, $keys = null) {
         if (is_null($name)) {
-            
+
         } elseif (is_null($keys)) {
             $this->tag = $name;
         } else {
