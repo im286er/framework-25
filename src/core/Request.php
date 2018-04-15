@@ -98,12 +98,6 @@ class Request {
     protected $session = [];
 
     /**
-     * 当前FILE参数
-     * @var array
-     */
-    protected $file = [];
-
-    /**
      * 当前COOKIE参数
      * @var array
      */
@@ -170,6 +164,12 @@ class Request {
      */
     // php://input
     protected $input;
+
+    /**
+     * 请求安全Key
+     * @var string
+     */
+    protected $secureKey;
 
     /**
      * 架构函数
@@ -285,7 +285,7 @@ class Request {
     }
 
     /**
-     * 检测是否使用手机访问
+     * 检测是否使用手机访问(不建议使用，可采用 https://github.com/serbanghita/Mobile-Detect )
      * @access public
      * @return bool
      */
@@ -366,16 +366,18 @@ class Request {
      * @param  array     $files
      * @param  array     $server
      * @param  string    $content
-     * @return \think\Request
+     * @return Request
      */
     public function create($uri, $method = 'GET', $params = [], $cookie = [], $files = [], $server = [], $content = null) {
         $server['PATH_INFO'] = '';
         $server['REQUEST_METHOD'] = strtoupper($method);
         $info = parse_url($uri);
+
         if (isset($info['host'])) {
             $server['SERVER_NAME'] = $info['host'];
             $server['HTTP_HOST'] = $info['host'];
         }
+
         if (isset($info['scheme'])) {
             if ('https' === $info['scheme']) {
                 $server['HTTPS'] = 'on';
@@ -385,27 +387,34 @@ class Request {
                 $server['SERVER_PORT'] = 80;
             }
         }
+
         if (isset($info['port'])) {
             $server['SERVER_PORT'] = $info['port'];
             $server['HTTP_HOST'] = $server['HTTP_HOST'] . ':' . $info['port'];
         }
+
         if (isset($info['user'])) {
             $server['PHP_AUTH_USER'] = $info['user'];
         }
+
         if (isset($info['pass'])) {
             $server['PHP_AUTH_PW'] = $info['pass'];
         }
+
         if (!isset($info['path'])) {
             $info['path'] = '/';
         }
+
         $options = [];
-        $options[strtolower($method)] = $params;
         $queryString = '';
+
+        $options[strtolower($method)] = $params;
+
         if (isset($info['query'])) {
             parse_str(html_entity_decode($info['query']), $query);
             if (!empty($params)) {
                 $params = array_replace($query, $params);
-                $queryString = http_build_query($query, '', '&');
+                $queryString = http_build_query($params, '', '&');
             } else {
                 $params = $query;
                 $queryString = $info['query'];
@@ -413,6 +422,7 @@ class Request {
         } elseif (!empty($params)) {
             $queryString = http_build_query($params, '', '&');
         }
+
         if ($queryString) {
             parse_str($queryString, $get);
             $options['get'] = isset($options['get']) ? array_merge($get, $options['get']) : $get;
@@ -970,7 +980,7 @@ class Request {
      * @return mixed
      */
     public function session($name = '', $default = null, $filter = '') {
-       
+
         if (empty($this->session)) {
             $this->session = Session::getInstance()->get();
         }
@@ -1036,68 +1046,6 @@ class Request {
         }
 
         return $this->input($this->server, false === $name ? false : strtoupper($name), $default, $filter);
-    }
-
-    /**
-     * 获取上传的文件信息
-     * @access public
-     * @param  string|array $name 名称
-     * @return null|array|\think\File
-     */
-    public function file($name = '') {
-        if (empty($this->file)) {
-            $this->file = isset($_FILES) ? $_FILES : [];
-        }
-
-        if (is_array($name)) {
-            return $this->file = array_merge($this->file, $name);
-        }
-
-        $files = $this->file;
-        if (!empty($files)) {
-            // 处理上传文件
-            $array = [];
-            foreach ($files as $key => $file) {
-                if (is_array($file['name'])) {
-                    $item = [];
-                    $keys = array_keys($file);
-                    $count = count($file['name']);
-                    for ($i = 0; $i < $count; $i++) {
-                        if (empty($file['tmp_name'][$i]) || !is_file($file['tmp_name'][$i])) {
-                            continue;
-                        }
-                        $temp['key'] = $key;
-                        foreach ($keys as $_key) {
-                            $temp[$_key] = $file[$_key][$i];
-                        }
-                        $item[] = (new File($temp['tmp_name']))->setUploadInfo($temp);
-                    }
-                    $array[$key] = $item;
-                } else {
-                    if ($file instanceof File) {
-                        $array[$key] = $file;
-                    } else {
-                        if (empty($file['tmp_name']) || !is_file($file['tmp_name'])) {
-                            continue;
-                        }
-                        $array[$key] = (new File($file['tmp_name']))->setUploadInfo($file);
-                    }
-                }
-            }
-            if (strpos($name, '.')) {
-                list($name, $sub) = explode('.', $name);
-            }
-            if ('' === $name) {
-                // 获取全部文件
-                return $array;
-            } elseif (isset($sub) && isset($array[$name][$sub])) {
-                return $array[$name][$sub];
-            } elseif (isset($array[$name])) {
-                return $array[$name];
-            }
-        }
-
-        return;
     }
 
     /**
@@ -1459,13 +1407,12 @@ class Request {
      */
     public function ip($type = 0, $adv = true) {
         $type = $type ? 1 : 0;
-        static $ip = null;
 
-        if (null !== $ip) {
-            return $ip[$type];
-        }
+        $httpAgentIp = Config::get('http_agent_ip');
 
-        if ($adv) {
+        if ($httpAgentIp && isset($_SERVER[$httpAgentIp])) {
+            $ip = $_SERVER[$httpAgentIp];
+        } elseif ($adv) {
             if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
                 $arr = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
                 $pos = array_search('unknown', $arr);
@@ -1482,9 +1429,18 @@ class Request {
             $ip = $_SERVER['REMOTE_ADDR'];
         }
 
+        // IP地址类型
+        $ip_mode = (strpos($ip, ':') === false) ? 'ipv4' : 'ipv6';
+
         // IP地址合法验证
-        $long = sprintf("%u", ip2long($ip));
-        $ip = $long ? [$ip, $long] : ['0.0.0.0', 0];
+        if (filter_var($ip, FILTER_VALIDATE_IP) !== $ip) {
+            $ip = ($ip_mode === 'ipv4') ? '0.0.0.0' : '::';
+        }
+
+        // 如果是ipv4地址，则直接使用ip2long返回int类型ip；如果是ipv6地址，暂时不支持，直接返回0
+        $long_ip = ($ip_mode === 'ipv4') ? sprintf("%u", ip2long($ip)) : 0;
+
+        $ip = [$ip, $long_ip];
 
         return $ip[$type];
     }
@@ -1587,6 +1543,19 @@ class Request {
      */
     public function getInput() {
         return $this->input;
+    }
+
+    /**
+     * 获取当前请求的安全Key
+     * @access public
+     * @return string
+     */
+    public function secureKey() {
+        if (is_null($this->secureKey)) {
+            $this->secureKey = uniqid('', true);
+        }
+
+        return $this->secureKey;
     }
 
 }
