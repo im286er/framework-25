@@ -34,7 +34,7 @@ class Session {
     }
 
     /**
-     * 设置
+     * 设置 session
      * @param   string    $name   名称
      * @param   string    $value  值
      */
@@ -56,7 +56,7 @@ class Session {
     }
 
     /**
-     * Cookie获取
+     * 获取 session
      * @param type $name
      * @param type $prefix
      */
@@ -75,7 +75,7 @@ class Session {
     }
 
     /**
-     * 删除
+     * 删除 session
      */
     public function delete($name) {
         !isset($this->init) && $this->init();
@@ -85,7 +85,7 @@ class Session {
     }
 
     /**
-     * 销毁session
+     * 销毁 session
      * @return boolean
      */
     public function clear() {

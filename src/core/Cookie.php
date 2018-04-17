@@ -71,7 +71,7 @@ class Cookie {
     }
 
     /**
-     * Cookie 设置、获取、删除
+     * Cookie 设置
      *
      * @access public
      * @param  string $name  cookie名称
