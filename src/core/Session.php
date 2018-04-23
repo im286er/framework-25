@@ -25,6 +25,24 @@ class Session {
         $this->init = true;
     }
 
+    /**
+     * 获取当前　Session 的 sid 
+     * @return type
+     */
+    public function get_session_id() {
+        !isset($this->init) && $this->init();
+        return session_id();
+    }
+
+    /**
+     * 设置当前 Session 的 sid, 必须要 session 启动前使用
+     * @param type $id
+     * @return type
+     */
+    public function set_session_id($id = null) {
+        return session_id($id);
+    }
+
     public static function getInstance() {
         static $obj;
         if (!$obj) {
