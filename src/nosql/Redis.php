@@ -156,8 +156,9 @@ class Redis {
             if ($this->ver) {
                 return $this;
             }
-            /* 设置版本号 */
+            /* 设置新版本号 */
             $this->ver = $this->link->incrby($key, 1);
+
         } catch (\Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -198,6 +199,12 @@ class Redis {
             try {
                 /* 获取新版本号 */
                 $this->ver = $this->link->incrby($key, 1);
+
+                /* 最大版本号修正 */
+                if ($this->ver == PHP_INT_MAX) {
+                    $this->ver = 1;
+                    $this->link->set($key, 1);
+                }
 
                 $this->group = null;
 
