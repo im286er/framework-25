@@ -158,7 +158,6 @@ class Redis {
             }
             /* 设置新版本号 */
             $this->ver = $this->link->incrby($key, 1);
-
         } catch (\Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -183,12 +182,9 @@ class Redis {
             $keys = $this->getTagItem($this->tag);
             if ($keys) {
                 foreach ($keys as $key) {
-                    $this->link->delete($key);
+                    $this->delete($key);
                 }
             }
-
-            $key = $this->getCacheKey('hash_tag_' . md5($this->tag));
-            $this->link->delete($key);
 
             $this->tag = null;
         }
@@ -240,6 +236,7 @@ class Redis {
 
         if (!empty($this->tag)) {
             $key = $this->getCacheKey($cache_id);
+            $key = $this->getCacheKey($cache_id);
             $this->tag = null;
         } else {
             $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
@@ -279,7 +276,7 @@ class Redis {
 
         if (!empty($this->tag)) {
             $key = $this->getCacheKey($cache_id);
-            $this->setTagItem($key);
+            $this->setTagItem($cache_id);
             $this->tag = null;
         } else {
             $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
@@ -312,8 +309,7 @@ class Redis {
     public function delete($cache_id) {
 
         if (!empty($this->tag)) {
-            $key = $this->getCacheKey($cache_id);
-            $this->link->hDel($this->getCacheKey('hash_tag_' . md5($this->tag)), $key);
+            $this->link->hDel($this->getCacheKey('hash_tag_' . md5($this->tag)), $cache_id);
             $this->tag = null;
         } else {
             $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
