@@ -185,7 +185,6 @@ class Redis {
                     $this->delete($key);
                 }
             }
-
             $this->tag = null;
         }
 
@@ -235,7 +234,6 @@ class Redis {
     public function get($cache_id, $default = false) {
 
         if (!empty($this->tag)) {
-            $key = $this->getCacheKey($cache_id);
             $key = $this->getCacheKey($cache_id);
             $this->tag = null;
         } else {
@@ -627,31 +625,10 @@ class Redis {
      * 缓存标签
      * @access public
      * @param  string        $name 标签名
-     * @param  string|array  $keys 缓存标识
      * @return $this
      */
-    public function tag($name, $keys = null) {
-        if (is_null($name)) {
-
-        } elseif (is_null($keys)) {
-            $this->tag = $name;
-        } else {
-
-            if (is_string($keys)) {
-                $keys = explode(',', $keys);
-            }
-
-            $keys = array_map([$this, 'getCacheKey'], $keys);
-
-            $key = $this->getCacheKey('hash_tag_' . md5($name));
-
-            if ($keys) {
-                foreach ($keys as $value) {
-                    $this->link->hSet($key, $value, time());
-                }
-            }
-        }
-
+    public function tag($name) {
+        $this->tag = $name;
         return $this;
     }
 
