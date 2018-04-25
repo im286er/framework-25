@@ -68,9 +68,20 @@ class Redis {
             $con = new \Redis;
 
             if ($conf['persistent']) {
-                $con->pconnect($conf['host'], $conf['port'], $conf['timeout'], 'persistent_id_' . $conf['select']);
+                $rs = $con->pconnect($conf['host'], $conf['port'], $conf['timeout'], 'persistent_id_' . $conf['select']);
             } else {
-                $con->connect($conf['host'], $conf['port'], $conf['timeout']);
+                $rs = $con->connect($conf['host'], $conf['port'], $conf['timeout']);
+            }
+
+            if ($rs == true) {
+                $this->isConnected = true;
+                $this->link[$k] = $con;
+
+                $this->hash->addTarget($k);
+            } else {
+                $this->isConnected = false;
+                /* 跳过 */
+                continue;
             }
 
             if ('' != $conf['password']) {
@@ -83,15 +94,6 @@ class Redis {
 
             if (!empty($conf['prefix'])) {
                 $this->prefix = $conf['prefix'];
-            }
-
-            if ($con == true) {
-                $this->isConnected = true;
-                $this->link[$k] = $con;
-
-                $this->hash->addTarget($k);
-            } else {
-                $this->isConnected = false;
             }
         }
     }
