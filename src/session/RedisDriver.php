@@ -9,7 +9,7 @@ use framework\nosql\Redis;
  */
 class RedisDriver extends \SessionHandler {
 
-    private $_expiration = 7200;       /* 2小时 */
+    private $ttl = 7200;       /* 2小时 */
 
     public function open($savePath, $sessionName) {
         return true;
@@ -23,14 +23,14 @@ class RedisDriver extends \SessionHandler {
         if (empty($session_id)) {
             return '';
         }
-        return Redis::getInstance(['prefix' => 'session_'])->simple_get($session_id);
+        return Redis::getInstance()->tag('session')->get($session_id);
     }
 
     public function write($session_id, $session_data) {
         if (empty($session_id)) {
             return false;
         }
-        Redis::getInstance(['prefix' => 'session_'])->simple_set($session_id, $session_data, $this->_expiration);
+        Redis::getInstance()->tag('session')->set($session_id, $session_data, $this->ttl);
         return true;
     }
 
@@ -38,7 +38,7 @@ class RedisDriver extends \SessionHandler {
         if (empty($session_id)) {
             return false;
         }
-        Redis::getInstance(['prefix' => 'session_'])->simple_delete($session_id);
+        Redis::getInstance()->tag('session')->delete($session_id);
         return true;
     }
 

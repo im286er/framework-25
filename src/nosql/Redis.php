@@ -6,8 +6,7 @@ use framework\core\Config;
 use framework\core\Exception;
 
 /**
- * Redis缓存驱动，适合单机部署、有前端代理实现高可用的场景，性能最好
- * 有需要在业务层实现读写分离、或者使用RedisCluster的需求，请使用Redisd驱动
+ *  Redis 缓存驱动
  *
  * 要求安装phpredis扩展：https://github.com/phpredis/phpredis/
  */
@@ -17,8 +16,9 @@ class Redis {
     private $group = '_cache_';
     private $prefix = 'vvjob_';
     private $tag;     /* 缓存标签 */
-    private $ver;
-    private $link;
+    private $ver = 0;
+    private $link = [];
+    private $hash;
 
     /**
      * 是否连接server
@@ -37,7 +37,7 @@ class Redis {
      */
     private $maxReConnected = 3;
 
-    public function __construct($option) {
+    public function __construct() {
 
         if (!extension_loaded('redis')) {
             throw new Exception('当前环境不支持: redis');
@@ -49,53 +49,65 @@ class Redis {
             throw new Exception('请配置 redis !');
         }
 
-        if (!empty($option)) {
-            if (isset($option['prefix'])) {
-                $this->prefix = $option['prefix'];
-            }
-        }
-
-
         $this->connect();
     }
 
-    public static function getInstance($option = ['prefix' => 'vvjob_']) {
-        static $obj = [];
-        $key = serialize($option);
-        $key = md5($key);
-        if (!isset($obj[$key])) {
-            $obj[$key] = new self($option);
+    public static function getInstance() {
+        static $obj;
+        if (!$obj) {
+            $obj = new self();
         }
-        return $obj[$key];
+        return $obj;
     }
 
     private function connect() {
-        $this->link = new \Redis;
 
-        if ($this->conf['persistent']) {
-            $this->link->pconnect($this->conf['host'], $this->conf['port'], $this->conf['timeout'], 'persistent_id_' . $this->conf['select']);
-        } else {
-            $this->link->connect($this->conf['host'], $this->conf['port'], $this->conf['timeout']);
-        }
+        $this->hash = new Flexihash();
 
-        if ('' != $this->conf['password']) {
-            $this->link->auth($this->conf['password']);
-        }
+        foreach ($this->conf as $k => $conf) {
+            $con = new \Redis;
 
-        if (0 != $this->conf['select']) {
-            $this->link->select($this->conf['select']);
-        }
-
-        //如果获取服务器池的统计信息返回false,说明服务器池中有不可用服务器
-        try {
-            if ($this->link->info() === false) {
-                $this->isConnected = false;
+            if ($conf['persistent']) {
+                $con->pconnect($conf['host'], $conf['port'], $conf['timeout'], 'persistent_id_' . $conf['select']);
             } else {
-                $this->isConnected = true;
+                $con->connect($conf['host'], $conf['port'], $conf['timeout']);
             }
-        } catch (\Exception $ex) {
-            $this->isConnected = false;
+
+            if ('' != $conf['password']) {
+                $con->auth($conf['password']);
+            }
+
+            if (0 != $conf['select']) {
+                $con->select($conf['select']);
+            }
+
+            if (!empty($conf['prefix'])) {
+                $this->prefix = $conf['prefix'];
+            }
+
+            if ($con == true) {
+                $this->isConnected = true;
+                $this->link[$k] = $con;
+
+                $this->hash->addTarget($k);
+            } else {
+                $this->isConnected = false;
+            }
         }
+    }
+
+    private function _getConForKey($key = '') {
+        $i = $this->hash->lookup($key);
+        return $this->link[$i];
+    }
+
+    /**
+     * 检查是否能 ping 成功
+     * @param type $key
+     * @return boolean
+     */
+    public function ping($key = '') {
+        return $this->_getConForKey($key)->ping() == '+PONG';
     }
 
     /**
@@ -104,14 +116,9 @@ class Redis {
      */
     public function is_available() {
         if (!$this->isConnected && $this->reConnected < $this->maxReConnected) {
-            try {
-                if ($this->link->ping() == '+PONG') {
-                    $this->isConnected = true;
-                }
-            } catch (\RedisException $ex) {
-                /* 记录连接异常 */
-                $this->connect();
-            }
+
+            $this->connect();
+
             if (!$this->isConnected) {
                 $this->reConnected++;
             }
@@ -131,8 +138,8 @@ class Redis {
      * @throws \Exception
      */
     public function __call($method, $args) {
-        if (method_exists($this->link, $method)) {
-            return call_user_func_array(array($this->link, $method), $args);
+        if (method_exists($this->_getConForKey(), $method)) {
+            return call_user_func_array(array($this->_getConForKey(), $method), $args);
         } else {
             throw new \Exception(__CLASS__ . ":{$method} is not exists!");
         }
@@ -152,12 +159,12 @@ class Redis {
 
         try {
             /* 获取版本号 */
-            $this->ver = $this->link->get($key);
+            $this->ver = $this->_getConForKey($key)->get($key);
             if ($this->ver) {
                 return $this;
             }
             /* 设置新版本号 */
-            $this->ver = $this->link->incrby($key, 1);
+            $this->ver = $this->_getConForKey($key)->incrby($key, 1);
         } catch (\Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -170,6 +177,17 @@ class Redis {
     }
 
     /**
+     * 缓存标签
+     * @access public
+     * @param  string        $name 标签名
+     * @return $this
+     */
+    public function tag($name) {
+        $this->tag = $name;
+        return $this;
+    }
+
+    /**
      * 按分组清空缓存
      * @param string $group
      * @return type
@@ -178,11 +196,14 @@ class Redis {
     public function clear() {
 
         if (!empty($this->tag)) {
+
             // 指定标签清除
-            $keys = $this->getTagItem($this->tag);
+            $key = $this->getCacheKey('hash_tag_' . $this->tag);
+            $keys = $this->_getConForKey($key)->hKeys($key);
+
             if ($keys) {
-                foreach ($keys as $key) {
-                    $this->delete($key);
+                foreach ($keys as $cache_id) {
+                    $this->delete($cache_id);
                 }
             }
             $this->tag = null;
@@ -193,12 +214,12 @@ class Redis {
             $key = $this->getCacheKey($key);
             try {
                 /* 获取新版本号 */
-                $this->ver = $this->link->incrby($key, 1);
+                $this->ver = $this->_getConForKey($key)->incrby($key, 1);
 
                 /* 最大版本号修正 */
                 if ($this->ver == PHP_INT_MAX) {
                     $this->ver = 1;
-                    $this->link->set($key, 1);
+                    $this->_getConForKey($key)->set($key, 1);
                 }
 
                 $this->group = null;
@@ -242,7 +263,7 @@ class Redis {
 
         try {
 
-            $value = $this->link->get($key);
+            $value = $this->_getConForKey($key)->get($key);
 
             if (is_null($value) || false === $value) {
                 return $default;
@@ -267,29 +288,33 @@ class Redis {
      * 设置有分组的缓存
      * @param type $cache_id    缓存 key
      * @param type $var         缓存值
-     * @param type $expire      有效期(秒)
+     * @param type $ttl      有效期(秒)
      * @return boolean
      */
-    public function set($cache_id, $var, $expire = 0) {
+    public function set($cache_id, $var, $ttl = 0) {
 
         if (!empty($this->tag)) {
+
+            /* 设置缓存标志 */
+            $key = $this->getCacheKey('hash_tag_' . $this->tag);
+            $this->_getConForKey($key)->hSet($key, $cache_id, 1);
+
+            /* 真正缓存id */
             $key = $this->getCacheKey($cache_id);
-            $this->setTagItem($cache_id);
             $this->tag = null;
         } else {
             $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
         }
 
-
         $var = is_scalar($var) ? $var : 'serialize:' . serialize($var);
 
         try {
-            if ($expire == 0) {
+            if ($ttl == 0) {
                 // 缓存 3.5 天
-                return $this->link->setex($key, 302400, $var);
+                return $this->_getConForKey($key)->setex($key, 302400, $var);
             } else {
                 // 有时间限制
-                return $this->link->setex($key, $expire, $var);
+                return $this->_getConForKey($key)->setex($key, $ttl, $var);
             }
         } catch (\Exception $ex) {
             //连接状态置为false
@@ -307,14 +332,21 @@ class Redis {
     public function delete($cache_id) {
 
         if (!empty($this->tag)) {
-            $this->link->hDel($this->getCacheKey('hash_tag_' . md5($this->tag)), $cache_id);
+
+            /* 删除缓存标志 */
+            $key = $this->getCacheKey('hash_tag_' . $this->tag);
+            $this->_getConForKey($key)->hDel($key, $cache_id);
+
+            /* 真正缓存id */
+            $key = $this->getCacheKey($cache_id);
+
             $this->tag = null;
         } else {
             $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
         }
 
         try {
-            return $this->link->delete($key);
+            return $this->_getConForKey($key)->delete($key);
         } catch (\Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -334,26 +366,13 @@ class Redis {
      */
     public function lock($cache_id, $ttl = 5) {
         $key = "lock_{$cache_id}";
-        try {
-            $rs = $this->link->get($key);
-            if ($rs) {
-                return false;
-            }
-        } catch (\Exception $ex) {
-            //连接状态置为false
-            $this->isConnected = false;
-            $this->is_available();
+
+        $rs = $this->simple_get($key);
+        if ($rs == true) {
             return false;
         }
 
-        try {
-            return $this->link->setex($key, $ttl, '1');
-        } catch (\Exception $ex) {
-            //连接状态置为false
-            $this->isConnected = false;
-            $this->is_available();
-        }
-        return false;
+        return $this->simple_set($key, true, $ttl);
     }
 
     /**
@@ -364,14 +383,8 @@ class Redis {
      */
     public function is_lock($cache_id) {
         $key = "lock_{$cache_id}";
-        try {
-            return (boolean) $this->link->get($key);
-        } catch (\Exception $ex) {
-            //连接状态置为false
-            $this->isConnected = false;
-            $this->is_available();
-        }
-        return true;
+
+        return $this->simple_get($key);
     }
 
     /**
@@ -381,33 +394,27 @@ class Redis {
      */
     public function unlock($cache_id) {
         $key = "lock_{$cache_id}";
-        try {
-            return $this->link->delete($key);
-        } catch (\Exception $ex) {
-            //连接状态置为false
-            $this->isConnected = false;
-            $this->is_available();
-        }
-        return false;
+
+        return $this->simple_delete($key);
     }
 
     /**
      * 简单设置缓存
      * @param type $cache_id    缓存 key
      * @param type $var         缓存值
-     * @param type $expire      有效期(秒)
+     * @param type $ttl      有效期(秒)
      * @return
      */
-    public function simple_set($cache_id, $var, $expire = 0) {
+    public function simple_set($cache_id, $var, $ttl = 0) {
         $key = $this->getCacheKey($cache_id);
         $var = is_scalar($var) ? $var : 'serialize:' . serialize($var);
 
         try {
-            if ($expire == 0) {
-                return $this->link->set($key, $var);
+            if ($ttl == 0) {
+                return $this->_getConForKey($key)->set($key, $var);
             } else {
                 // 有时间限制
-                return $this->link->setex($key, $expire, $var);
+                return $this->_getConForKey($key)->setex($key, $ttl, $var);
             }
         } catch (\Exception $ex) {
             //连接状态置为false
@@ -426,7 +433,7 @@ class Redis {
     public function simple_get($cache_id, $default = false) {
         $key = $this->getCacheKey($cache_id);
         try {
-            $value = $this->link->get($key);
+            $value = $this->_getConForKey($key)->get($key);
 
             if (is_null($value) || false === $value) {
                 return $default;
@@ -455,7 +462,7 @@ class Redis {
     public function simple_delete($cache_id) {
         $key = $this->getCacheKey($cache_id);
         try {
-            return $this->link->delete($key);
+            return $this->_getConForKey($key)->delete($key);
         } catch (\Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -475,11 +482,11 @@ class Redis {
      */
     public function act_limit($uid, $action, $max_count, $period) {
         $timestamp = time();
-        $expire = intval($timestamp / $period) * $period + $period;
-        $ttl = $expire - $timestamp;
+        $ttl = intval($timestamp / $period) * $period + $period;
+        $ttl = $ttl - $timestamp;
         $key = "act_limit_" . md5("{$uid}|{$action}");
         try {
-            $count = $this->link->get($key);
+            $count = $this->_getConForKey($key)->get($key);
             if ($count) {
                 if ($count > $max_count) {
                     return false;
@@ -496,7 +503,7 @@ class Redis {
         }
 
         try {
-            $this->link->setex($key, $ttl, $count);
+            $this->_getConForKey($key)->setex($key, $ttl, $count);
             return true;
         } catch (\Exception $ex) {
             //连接状态置为false
@@ -514,7 +521,7 @@ class Redis {
      * @return false|int
      */
     public function simple_inc($key, $step = 1) {
-        return $this->link->incrby($key, $step);
+        return $this->_getConForKey($key)->incrby($key, $step);
     }
 
     /**
@@ -525,7 +532,7 @@ class Redis {
      * @return false|int
      */
     public function simple_dec($key, $step = 1) {
-        return $this->link->decrby($key, $step);
+        return $this->_getConForKey($key)->decrby($key, $step);
     }
 
     /**
@@ -538,7 +545,7 @@ class Redis {
 
         $data = is_scalar($data) ? $data : 'serialize:' . serialize($data);
 
-        return $this->link->rPush($name, $data);
+        return $this->_getConForKey($name)->rPush($name, $data);
     }
 
     /**
@@ -547,7 +554,7 @@ class Redis {
      * @return boolean
      */
     public function queue_pop($name = 'queue_task') {
-        $value = $this->link->lPop($name);
+        $value = $this->_getConForKey($name)->lPop($name);
         if (is_null($value) || false === $value) {
             return false;
         }
@@ -599,7 +606,7 @@ class Redis {
      * @return int
      */
     public function queue_size($name = 'queue_task') {
-        $rs = $this->link->lLen($name);
+        $rs = $this->_getConForKey($name)->lLen($name);
         if ($rs) {
             return $rs;
         }
@@ -611,51 +618,11 @@ class Redis {
      * @return type
      */
     public function get_stats() {
-        try {
-            return $this->link->info();
-        } catch (\Exception $ex) {
-            //连接状态置为false
-            $this->isConnected = false;
-            $this->is_available();
+        $data = [];
+        foreach ($this->link as $key => $value) {
+            $data[$key] = $this->link[$key]->info();
         }
-        return false;
-    }
-
-    /**
-     * 缓存标签
-     * @access public
-     * @param  string        $name 标签名
-     * @return $this
-     */
-    public function tag($name) {
-        $this->tag = $name;
-        return $this;
-    }
-
-    /**
-     * 更新标签
-     * @access protected
-     * @param  string $name 缓存标识
-     * @return void
-     */
-    protected function setTagItem($name) {
-        if (!empty($this->tag)) {
-            $key = $this->getCacheKey('hash_tag_' . md5($this->tag));
-
-            $this->link->hSet($key, $name, time());
-        }
-    }
-
-    /**
-     * 获取标签包含的缓存标识
-     * @access protected
-     * @param  string $tag 缓存标签
-     * @return array
-     */
-    protected function getTagItem($tag) {
-        $key = $this->getCacheKey('hash_tag_' . md5($tag));
-
-        return $this->link->hKeys($key);
+        return $data;
     }
 
 }

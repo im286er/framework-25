@@ -13,7 +13,8 @@ use framework\core\Log;
 class ssdbService {
 
     private $conf;
-    private $link;
+    private $link = [];
+    private $hash;
 
     /**
      * 是否连接server
@@ -44,6 +45,8 @@ class ssdbService {
      */
     private function connect() {
 
+        $this->hash = new Flexihash();
+
         foreach ($this->conf as $k => $conf) {
 
             try {
@@ -61,6 +64,7 @@ class ssdbService {
                     $con->auth($conf['password']);
                 }
                 $this->link[$k] = $con;
+                $this->hash->addTarget($k);
             }
         }
     }
@@ -86,14 +90,8 @@ class ssdbService {
     }
 
     private function _getConForKey($key) {
-        $hashCode = 0;
-        for ($i = 0, $len = strlen($key); $i < $len; $i++) {
-            $hashCode = (int) (($hashCode * 33) + ord($key[$i])) & 0x7fffffff;
-        }
-        if (($ns = count($this->link)) > 0) {
-            return $this->link[$hashCode % $ns];
-        }
-        return false;
+        $i = $this->hash->lookup($key);
+        return $this->link[$i];
     }
 
     /**
