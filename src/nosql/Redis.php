@@ -15,7 +15,7 @@ class Redis {
     private $conf;
     private $group = '_cache_';
     private $prefix = 'vvjob_';
-    private $tag;     /* 缓存标签 */
+    private $tag = '_cache_';     /* 缓存标签 */
     private $ver = 0;
     private $link = [];
     private $hash;
@@ -98,6 +98,16 @@ class Redis {
         }
     }
 
+    /**
+     * 获取实际的缓存标识
+     * @access protected
+     * @param  string $name 缓存名
+     * @return string
+     */
+    protected function getCacheKey($name) {
+        return $this->prefix . $name;
+    }
+
     private function _getConForKey($key = '') {
         $i = $this->hash->lookup($key);
         return $this->link[$i];
@@ -148,16 +158,136 @@ class Redis {
     }
 
     /**
+     * 缓存标签
+     * @access public
+     * @param  string        $name 标签名
+     * @return $this
+     */
+    public function tag($name) {
+        if (!empty($name)) {
+            $this->tag = $name;
+        }
+        return $this;
+    }
+
+    public function tag_clear() {
+        if (!empty($this->tag)) {
+
+            // 指定标签清除
+            $key = $this->getCacheKey('hash_tag_' . $this->tag);
+            $keys = $this->_getConForKey($key)->hKeys($key);
+
+            if ($keys) {
+                foreach ($keys as $cache_id) {
+                    $this->tag_delete($cache_id);
+                }
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public function tag_get($cache_id, $default = false) {
+        if (!empty($this->tag)) {
+            $key = $this->getCacheKey($cache_id);
+
+            try {
+
+                $value = $this->_getConForKey($key)->get($key);
+
+                if (is_null($value) || false === $value) {
+                    return $default;
+                }
+
+                try {
+                    $result = (0 === strpos($value, 'serialize:')) ? unserialize(substr($value, 10)) : $value;
+                } catch (\Exception $e) {
+                    $result = $default;
+                }
+
+                return $result;
+            } catch (\Exception $ex) {
+                //连接状态置为false
+                $this->isConnected = false;
+                $this->is_available();
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 设置有分组的缓存
+     * @param type $cache_id    缓存 key
+     * @param type $var         缓存值
+     * @param type $ttl      有效期(秒)
+     * @return boolean
+     */
+    public function tag_set($cache_id, $var, $ttl = 0) {
+        if (!empty($this->tag)) {
+
+            /* 设置缓存标志 */
+            $key = $this->getCacheKey('hash_tag_' . $this->tag);
+            $this->_getConForKey($key)->hSet($key, $cache_id, 1);
+
+            /* 真正缓存id */
+            $key = $this->getCacheKey($cache_id);
+            $var = is_scalar($var) ? $var : 'serialize:' . serialize($var);
+
+            try {
+                if ($ttl == 0) {
+                    // 缓存 3.5 天
+                    return $this->_getConForKey($key)->setex($key, 302400, $var);
+                } else {
+                    // 有时间限制
+                    return $this->_getConForKey($key)->setex($key, $ttl, $var);
+                }
+            } catch (\Exception $ex) {
+                //连接状态置为false
+                $this->isConnected = false;
+                $this->is_available();
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 删除有分组的缓存
+     * @param type $cache_id
+     * @return type
+     */
+    public function tag_delete($cache_id) {
+        if (!empty($this->tag)) {
+
+            /* 删除缓存标志 */
+            $key = $this->getCacheKey('hash_tag_' . $this->tag);
+            $this->_getConForKey($key)->hDel($key, $cache_id);
+
+            /* 真正缓存id */
+            $key = $this->getCacheKey($cache_id);
+
+            try {
+                return $this->_getConForKey($key)->delete($key);
+            } catch (\Exception $ex) {
+                //连接状态置为false
+                $this->isConnected = false;
+                $this->is_available();
+            }
+        }
+        return false;
+    }
+
+    /**
      * 设置缓存分组
      * @param type $group
      * @return $this
      */
     public function group($group = '_cache_') {
-
         $this->group = $group;
 
-        $key = 'cache_ver_' . $this->group;
-        $key = $this->getCacheKey($key);
+        $key = $this->getCacheKey('cache_ver_' . $this->group);
 
         try {
             /* 获取版本号 */
@@ -179,41 +309,15 @@ class Redis {
     }
 
     /**
-     * 缓存标签
-     * @access public
-     * @param  string        $name 标签名
-     * @return $this
-     */
-    public function tag($name) {
-        $this->tag = $name;
-        return $this;
-    }
-
-    /**
      * 按分组清空缓存
      * @param string $group
      * @return type
      * @return boolean
      */
     public function clear() {
+        if ($this->group) {
 
-        if (!empty($this->tag)) {
-
-            // 指定标签清除
-            $key = $this->getCacheKey('hash_tag_' . $this->tag);
-            $keys = $this->_getConForKey($key)->hKeys($key);
-
-            if ($keys) {
-                foreach ($keys as $cache_id) {
-                    $this->delete($cache_id);
-                }
-            }
-            $this->tag = null;
-        }
-
-        if (!empty($this->group)) {
-            $key = 'cache_ver_' . $this->group;
-            $key = $this->getCacheKey($key);
+            $key = $this->getCacheKey('cache_ver_' . $this->group);
             try {
                 /* 获取新版本号 */
                 $this->ver = $this->_getConForKey($key)->incrby($key, 1);
@@ -223,8 +327,6 @@ class Redis {
                     $this->ver = 1;
                     $this->_getConForKey($key)->set($key, 1);
                 }
-
-                $this->group = null;
 
                 return $this->ver;
             } catch (\Exception $ex) {
@@ -238,16 +340,6 @@ class Redis {
     }
 
     /**
-     * 获取实际的缓存标识
-     * @access protected
-     * @param  string $name 缓存名
-     * @return string
-     */
-    protected function getCacheKey($name) {
-        return $this->prefix . $name;
-    }
-
-    /**
      * 获取有分组的缓存
      * @access public
      * @param string $cache_id 缓存变量名
@@ -255,13 +347,7 @@ class Redis {
      * @return mixed
      */
     public function get($cache_id, $default = false) {
-
-        if (!empty($this->tag)) {
-            $key = $this->getCacheKey($cache_id);
-            $this->tag = null;
-        } else {
-            $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
-        }
+        $key = $this->getCacheKey("{$this->group}_{$this->ver}_{$cache_id}");
 
         try {
 
@@ -294,20 +380,7 @@ class Redis {
      * @return boolean
      */
     public function set($cache_id, $var, $ttl = 0) {
-
-        if (!empty($this->tag)) {
-
-            /* 设置缓存标志 */
-            $key = $this->getCacheKey('hash_tag_' . $this->tag);
-            $this->_getConForKey($key)->hSet($key, $cache_id, 1);
-
-            /* 真正缓存id */
-            $key = $this->getCacheKey($cache_id);
-            $this->tag = null;
-        } else {
-            $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
-        }
-
+        $key = $this->getCacheKey("{$this->group}_{$this->ver}_{$cache_id}");
         $var = is_scalar($var) ? $var : 'serialize:' . serialize($var);
 
         try {
@@ -332,20 +405,7 @@ class Redis {
      * @return type
      */
     public function delete($cache_id) {
-
-        if (!empty($this->tag)) {
-
-            /* 删除缓存标志 */
-            $key = $this->getCacheKey('hash_tag_' . $this->tag);
-            $this->_getConForKey($key)->hDel($key, $cache_id);
-
-            /* 真正缓存id */
-            $key = $this->getCacheKey($cache_id);
-
-            $this->tag = null;
-        } else {
-            $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
-        }
+        $key = $this->getCacheKey("{$this->group}_{$this->ver}_{$cache_id}");
 
         try {
             return $this->_getConForKey($key)->delete($key);
@@ -463,6 +523,7 @@ class Redis {
      */
     public function simple_delete($cache_id) {
         $key = $this->getCacheKey($cache_id);
+
         try {
             return $this->_getConForKey($key)->delete($key);
         } catch (\Exception $ex) {
@@ -486,33 +547,19 @@ class Redis {
         $timestamp = time();
         $ttl = intval($timestamp / $period) * $period + $period;
         $ttl = $ttl - $timestamp;
-        $key = "act_limit_" . md5("{$uid}|{$action}");
-        try {
-            $count = $this->_getConForKey($key)->get($key);
-            if ($count) {
-                if ($count > $max_count) {
-                    return false;
-                }
-            } else {
-                $count = 1;
-            }
-            $count += 1;
-        } catch (\Exception $ex) {
-            //连接状态置为false
-            $this->isConnected = false;
-            $this->is_available();
-            return false;
-        }
+        $cache_id = "act_limit_" . md5("{$uid}|{$action}");
 
-        try {
-            $this->_getConForKey($key)->setex($key, $ttl, $count);
-            return true;
-        } catch (\Exception $ex) {
-            //连接状态置为false
-            $this->isConnected = false;
-            $this->is_available();
+        $count = $this->simple_get($cache_id);
+        if ($count) {
+            if ($count > $max_count) {
+                return false;
+            }
+        } else {
+            $count = 1;
         }
-        return false;
+        $count += 1;
+
+        return $this->simple_set($cache_id, $count, $ttl);
     }
 
     /**
@@ -625,6 +672,18 @@ class Redis {
             $data[$key] = $this->link[$key]->info();
         }
         return $data;
+    }
+
+    /**
+     * 最好能保证它能最后析构!
+     * 关闭连接
+     */
+    public function __destruct() {
+        foreach ($this->link as $key => $value) {
+            $this->link[$key] = null;
+        }
+        unset($this->link);
+        unset($this->isConnected);
     }
 
 }

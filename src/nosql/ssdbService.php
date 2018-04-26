@@ -1266,9 +1266,8 @@ class ssdbService {
      * 关闭连接
      */
     public function __destruct() {
-        $max_i = count($this->link);
-        for ($i = 0; $i < $max_i; $i++) {
-            $this->link[$i]->close();
+        foreach ($this->link as $key => $value) {
+            $this->link[$key]->close();
         }
         unset($this->link);
         unset($this->isConnected);

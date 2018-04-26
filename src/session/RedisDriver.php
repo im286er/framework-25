@@ -23,14 +23,14 @@ class RedisDriver extends \SessionHandler {
         if (empty($session_id)) {
             return '';
         }
-        return Redis::getInstance()->tag('session')->get($session_id);
+        return Redis::getInstance()->simple_get($session_id);
     }
 
     public function write($session_id, $session_data) {
         if (empty($session_id)) {
             return false;
         }
-        Redis::getInstance()->tag('session')->set($session_id, $session_data, $this->ttl);
+        Redis::getInstance()->simple_set($session_id, $session_data, $this->ttl);
         return true;
     }
 
@@ -38,7 +38,7 @@ class RedisDriver extends \SessionHandler {
         if (empty($session_id)) {
             return false;
         }
-        Redis::getInstance()->tag('session')->delete($session_id);
+        Redis::getInstance()->simple_delete($session_id);
         return true;
     }
 
