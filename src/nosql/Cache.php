@@ -51,6 +51,10 @@ class Cache {
         /* 连接 memcached 缓存服务器 */
         foreach ($this->conf as $k => $conf) {
             $this->link->addServer($conf['host'], $conf['port']);
+
+            if (!empty($conf['prefix'])) {
+                $this->prefix = $conf['prefix'];
+            }
         }
 
         //如果获取服务器池的统计信息返回false,说明服务器池中有不可用服务器
@@ -161,7 +165,7 @@ class Cache {
                 $this->is_available();
             }
         }
-        
+
         return false;
     }
 
