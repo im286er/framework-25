@@ -67,7 +67,7 @@ class Redis {
         foreach ($this->conf as $k => $conf) {
             $con = new \Redis;
 
-            if ($conf['persistent']) {
+            if ($conf['persistent'] == true) {
                 $rs = $con->pconnect($conf['host'], $conf['port'], $conf['timeout'], 'persistent_id_' . $conf['select']);
             } else {
                 $rs = $con->connect($conf['host'], $conf['port'], $conf['timeout']);
@@ -158,6 +158,41 @@ class Redis {
     }
 
     /**
+     * 设置value,用于序列化存储
+     * @param mixed $value
+     * @return mixed
+     */
+    public function setValue($value) {
+        if (!is_numeric($value)) {
+            try {
+                $value = msgpack_pack($value);
+            } catch (Exception $exc) {
+                return false;
+            }
+        }
+        return $value;
+    }
+
+    /**
+     * 获取value,解析可能序列化的值
+     * @param mixed $value
+     * @return mixed
+     */
+    public function getValue($value, $default = false) {
+        if (is_null($value) || $value === false) {
+            return false;
+        }
+        if (!is_numeric($value)) {
+            try {
+                $value = msgpack_unpack($value);
+            } catch (Exception $exc) {
+                return $default;
+            }
+        }
+        return $value;
+    }
+
+    /**
      * 缓存标签
      * @access public
      * @param  string        $name 标签名
@@ -194,20 +229,11 @@ class Redis {
             $key = $this->getCacheKey($cache_id);
 
             try {
-
                 $value = $this->_getConForKey($key)->get($key);
-
                 if (is_null($value) || false === $value) {
                     return $default;
                 }
-
-                try {
-                    $result = (0 === strpos($value, 'serialize:')) ? unserialize(substr($value, 10)) : $value;
-                } catch (\Exception $e) {
-                    $result = $default;
-                }
-
-                return $result;
+                return $this->getValue($value, $default);
             } catch (\Exception $ex) {
                 //连接状态置为false
                 $this->isConnected = false;
@@ -234,7 +260,7 @@ class Redis {
 
             /* 真正缓存id */
             $key = $this->getCacheKey($cache_id);
-            $var = is_scalar($var) ? $var : 'serialize:' . serialize($var);
+            $var = $this->setValue($var);
 
             try {
                 if ($ttl == 0) {
@@ -357,13 +383,7 @@ class Redis {
                 return $default;
             }
 
-            try {
-                $result = (0 === strpos($value, 'serialize:')) ? unserialize(substr($value, 10)) : $value;
-            } catch (\Exception $e) {
-                $result = $default;
-            }
-
-            return $result;
+            return $this->getValue($value, $default);
         } catch (\Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -381,7 +401,7 @@ class Redis {
      */
     public function set($cache_id, $var, $ttl = 0) {
         $key = $this->getCacheKey("{$this->group}_{$this->ver}_{$cache_id}");
-        $var = is_scalar($var) ? $var : 'serialize:' . serialize($var);
+        $var = $this->setValue($var);
 
         try {
             if ($ttl == 0) {
@@ -469,7 +489,7 @@ class Redis {
      */
     public function simple_set($cache_id, $var, $ttl = 0) {
         $key = $this->getCacheKey($cache_id);
-        $var = is_scalar($var) ? $var : 'serialize:' . serialize($var);
+        $var = $this->setValue($var);
 
         try {
             if ($ttl == 0) {
@@ -501,13 +521,7 @@ class Redis {
                 return $default;
             }
 
-            try {
-                $result = 0 === strpos($value, 'serialize:') ? unserialize(substr($value, 10)) : $value;
-            } catch (\Exception $e) {
-                $result = $default;
-            }
-
-            return $result;
+            return $this->getValue($value, $default);
         } catch (\Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -592,7 +606,7 @@ class Redis {
      */
     public function queue_push($name = 'queue_task', $data = []) {
 
-        $data = is_scalar($data) ? $data : 'serialize:' . serialize($data);
+        $data = $this->setValue($data);
 
         return $this->_getConForKey($name)->rPush($name, $data);
     }
@@ -607,12 +621,7 @@ class Redis {
         if (is_null($value) || false === $value) {
             return false;
         }
-        try {
-            $result = 0 === strpos($value, 'serialize:') ? unserialize(substr($value, 10)) : $value;
-        } catch (\Exception $e) {
-            $result = false;
-        }
-        return $result;
+        return $this->getValue($value, false);
     }
 
     /**
@@ -679,8 +688,10 @@ class Redis {
      * 关闭连接
      */
     public function __destruct() {
-        foreach ($this->link as $key => $value) {
-            $this->link[$key] = null;
+        if (!empty($this->link)) {
+            foreach ($this->link as $key => $value) {
+                unset($this->link[$key]);
+            }
         }
         unset($this->link);
         unset($this->isConnected);
