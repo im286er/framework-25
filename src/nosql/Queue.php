@@ -22,7 +22,7 @@ class Queue {
      * @return boolean
      */
     public function qpush($queue_name = 'queue_task', $data = []) {
-        return Redis::getInstance()->queue_push($queue_name, $data);
+        return ssdbService::getInstance()->qpush($queue_name, serialize($data));
     }
 
     /**
@@ -33,9 +33,24 @@ class Queue {
      */
     public function qpop($queue_name = 'queue_task', $size = 1) {
         if ($size == 1) {
-            return Redis::getInstance()->queue_pop($queue_name);
+            $vo = ssdbService::getInstance()->qpop_front($queue_name, $size);
+            if ($vo) {
+                $vo = unserialize($vo);
+                if ($vo) {
+                    return $vo;
+                }
+            }
+            return false;
         }
-        return Redis::getInstance()->queue_multi_pop($queue_name, $size);
+        $list = ssdbService::getInstance()->qpop_front($queue_name, $size);
+        if ($list) {
+            $data = [];
+            foreach ($list as $key => $value) {
+                $data[$key] = unserialize($value);
+            }
+            return $data;
+        }
+        return false;
     }
 
     /**
@@ -52,7 +67,11 @@ class Queue {
      * @return int
      */
     public function size($queue_name = 'queue_task') {
-        return Redis::getInstance()->queue_size($queue_name);
+        $rs = ssdbService::getInstance()->qsize($queue_name);
+        if ($rs) {
+            return $rs;
+        }
+        return 0;
     }
 
 }

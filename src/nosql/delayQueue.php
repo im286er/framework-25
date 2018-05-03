@@ -7,12 +7,6 @@ namespace framework\nosql;
  */
 class delayQueue {
 
-    private $ssdb;
-
-    function __construct() {
-        $this->ssdb = ssdbService::getInstance();
-    }
-
     public static function getInstance() {
         static $obj;
         if (!$obj) {
@@ -34,21 +28,21 @@ class delayQueue {
         $hname = "delay_queue_{$queue_name}";
 
         /* 记录队列顺序 */
-        $id = $this->ssdb->zincr('tickets_id', 'delay_queue_id', 1);
+        $id = ssdbService::getInstance()->zincr('tickets_id', 'delay_queue_id', 1);
         if ($id == PHP_INT_MAX) {
             $id = 1;
-            $this->ssdb->zset('tickets_id', 'delay_queue_id', 1);
+            ssdbService::getInstance()->zset('tickets_id', 'delay_queue_id', 1);
         }
 
         /* 记录数据 */
         /* 修正延时 */
         $ttl = ($ttl <= 0) ? 10 : $ttl;
         $time = time() + $ttl;
-        $this->ssdb->zset($zname, $id, $time);
-        $this->ssdb->hset($hname, $id, serialize($data));
+        ssdbService::getInstance()->zset($zname, $id, $time);
+        ssdbService::getInstance()->hset($hname, $id, serialize($data));
 
         /* 积压队列数量 */
-        $this->ssdb->zincr('delay_queue', $queue_name, 1);
+        ssdbService::getInstance()->zincr('delay_queue', $queue_name, 1);
 
         return $id;
     }
@@ -80,14 +74,14 @@ class delayQueue {
         /* 获取数据 */
         $score_end = time();
         $size = ($size > 1000 && $size <= 0) ? 1000 : $size;
-        $items = $this->ssdb->zscan($zname, '', 1, $score_end, $size);
+        $items = ssdbService::getInstance()->zscan($zname, '', 1, $score_end, $size);
         if ($items) {
             foreach ($items as $id => $time) {
                 /* 组合数据 */
-                $value = $this->ssdb->hget($hname, $id);
+                $value = ssdbService::getInstance()->hget($hname, $id);
                 /* 删除队列数据 */
-                $this->ssdb->zdel($zname, $id);
-                $this->ssdb->hdel($hname, $id);
+                ssdbService::getInstance()->zdel($zname, $id);
+                ssdbService::getInstance()->hdel($hname, $id);
                 if (empty($value)) {
                     continue;
                 }
@@ -100,7 +94,7 @@ class delayQueue {
 
         /* 修正统计 */
         $total = $this->size($queue_name);
-        $this->ssdb->zset('delay_queue', $queue_name, $total);
+        ssdbService::getInstance()->zset('delay_queue', $queue_name, $total);
 
         /* 解锁 */
         Cache::getInstance()->unlock($zname);
@@ -138,14 +132,14 @@ class delayQueue {
         /* 获取数据 */
         $score_end = time();
         $size = ($size > 100 && $size <= 0) ? 100 : $size;
-        $items = $this->ssdb->zscan($zname, '', 1, $score_end, $size);
+        $items = ssdbService::getInstance()->zscan($zname, '', 1, $score_end, $size);
         if ($items) {
             foreach ($items as $id => $time) {
                 /* 组合数据 */
-                $value = $this->ssdb->hget($hname, $id);
+                $value = ssdbService::getInstance()->hget($hname, $id);
                 /* 删除队列数据 */
-                $this->ssdb->zdel($zname, $id);
-                $this->ssdb->hdel($hname, $id);
+                ssdbService::getInstance()->zdel($zname, $id);
+                ssdbService::getInstance()->hdel($hname, $id);
                 if (empty($value)) {
                     continue;
                 }
@@ -157,7 +151,7 @@ class delayQueue {
 
         /* 修正统计 */
         $total = $this->size($queue_name);
-        $this->ssdb->zset('delay_queue', $queue_name, $total);
+        ssdbService::getInstance()->zset('delay_queue', $queue_name, $total);
 
         /* 解锁 */
         Cache::getInstance()->unlock($zname);
@@ -175,7 +169,7 @@ class delayQueue {
     public function queue_list($page = 1, $size = 20) {
         $zname = 'delay_queue';
 
-        $total = $this->ssdb->zsize($zname);
+        $total = ssdbService::getInstance()->zsize($zname);
         $total = intval($total);
         $max_page = ceil($total / $size);
 
@@ -202,17 +196,17 @@ class delayQueue {
                 $newstart = 0;
             }
             if ($order == 0) {
-                $items = $this->ssdb->zrange($zname, $newstart, $size);
+                $items = ssdbService::getInstance()->zrange($zname, $newstart, $size);
             } else {
-                $items = $this->ssdb->zrrange($zname, $newstart, $size);
+                $items = ssdbService::getInstance()->zrrange($zname, $newstart, $size);
             }
             $items = array_reverse($items, TRUE);
         } else {
             $order = $sort_order_method == 0 ? 1 : 0;
             if ($order == 0) {
-                $items = $this->ssdb->zrange($zname, $start, $size);
+                $items = ssdbService::getInstance()->zrange($zname, $start, $size);
             } else {
-                $items = $this->ssdb->zrrange($zname, $start, $size);
+                $items = ssdbService::getInstance()->zrrange($zname, $start, $size);
             }
         }
 
@@ -237,7 +231,7 @@ class delayQueue {
      */
     public function size($queue_name = 'queue_task') {
         $zname = "delay_queue_{$queue_name}";
-        $total = $this->ssdb->zsize($zname);
+        $total = ssdbService::getInstance()->zsize($zname);
         if (empty($total)) {
             return 0;
         }
