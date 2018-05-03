@@ -2,6 +2,8 @@
 
 namespace framework\core;
 
+use framework\session\memcacheDriver;
+
 class Session {
 
     /**
@@ -17,7 +19,7 @@ class Session {
      */
     public function init() {
         /* 采用 NoSQL 保存 session */
-        session_set_save_handler(new \framework\session\RedisDriver());
+        session_set_save_handler(new memcacheDriver());
 
         /* 启动session */
         session_start();
@@ -26,7 +28,7 @@ class Session {
     }
 
     /**
-     * 获取当前　Session 的 sid 
+     * 获取当前　Session 的 sid
      * @return type
      */
     public function get_session_id() {

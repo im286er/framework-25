@@ -70,7 +70,7 @@ class delayQueue {
         }
 
         /* 加锁 */
-        $rs = Redis::getInstance()->lock($zname, 60);
+        $rs = Cache::getInstance()->lock($zname, 60);
         if ($rs == false) {
             /* 加锁失败 */
             return false;
@@ -103,7 +103,7 @@ class delayQueue {
         $this->ssdb->zset('delay_queue', $queue_name, $total);
 
         /* 解锁 */
-        Redis::getInstance()->unlock($zname);
+        Cache::getInstance()->unlock($zname);
 
         /* 返回 */
         if (empty($return_data)) {
@@ -129,7 +129,7 @@ class delayQueue {
         }
 
         /* 加锁 */
-        $rs = Redis::getInstance()->lock($zname, 60);
+        $rs = Cache::getInstance()->lock($zname, 60);
         if ($rs == false) {
             /* 加锁失败 */
             return false;
@@ -151,7 +151,7 @@ class delayQueue {
                 }
                 /* 存入正式队列 */
                 $data = unserialize($value);
-                Redis::getInstance()->queue_push($queue_name, $data);
+                Queue::getInstance()->qpush($queue_name, $data);
             }
         }
 
@@ -160,7 +160,7 @@ class delayQueue {
         $this->ssdb->zset('delay_queue', $queue_name, $total);
 
         /* 解锁 */
-        Redis::getInstance()->unlock($zname);
+        Cache::getInstance()->unlock($zname);
 
         /* 返回 */
         return true;

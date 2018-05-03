@@ -3,7 +3,7 @@
 namespace framework\db\Model;
 
 use framework\db\Driver\PGSQL;
-use framework\nosql\Redis;
+use framework\nosql\Cache;
 use framework\core\Exception;
 
 /**
@@ -664,28 +664,28 @@ class PGSQLModel {
      * @return false|integer
      */
     protected function lazyWrite($guid, $step, $lazyTime) {
-        $value = Redis::getInstance()->simple_get($guid);
+        $value = Cache::getInstance()->simple_get($guid);
         if (false !== $value) {
             // 存在缓存写入数据
-            $lazy_time = Redis::getInstance()->simple_get($guid . '_time');
+            $lazy_time = Cache::getInstance()->simple_get($guid . '_time');
             $lazyTime = intval($lazy_time) + $lazyTime;
             if (time() > $lazyTime) {
                 // 延时更新时间到了，删除缓存数据 并实际写入数据库
-                Redis::getInstance()->simple_delete($guid);
-                Redis::getInstance()->simple_delete($guid . '_time');
+                Cache::getInstance()->simple_delete($guid);
+                Cache::getInstance()->simple_delete($guid . '_time');
 
                 return $value + $step;
             } else {
                 // 追加数据到缓存
-                Redis::getInstance()->simple_set($guid, ($value + $step), 1209600);
+                Cache::getInstance()->simple_set($guid, ($value + $step), 1209600);
 
                 return false;
             }
         } else {
             // 没有缓存数据
-            Redis::getInstance()->simple_set($guid, $step, 1209600);
+            Cache::getInstance()->simple_set($guid, $step, 1209600);
             // 计时开始
-            Redis::getInstance()->simple_set($guid . '_time', time(), 1209600);
+            Cache::getInstance()->simple_set($guid . '_time', time(), 1209600);
 
             return false;
         }
