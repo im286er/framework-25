@@ -13,7 +13,7 @@ class Cache {
     private $conf;
     private $group = '_cache_';
     private $prefix = 'guipin_';
-    private static $ver = [];
+    private $ver = 0;
     private $link = [];
 
     /**
@@ -104,38 +104,37 @@ class Cache {
      */
     public function group($group = '_cache_') {
         $this->group = $group;
-        /* 命令行下，不能采用静态变量缓存 */
-        if (php_sapi_name() == "cli") {
-            self::$ver[$this->group] = $this->getVer();
-            return $this;
-        }
-        if (empty(self::$ver[$this->group])) {
-            self::$ver[$this->group] = $this->getVer();
-        }
-        return $this;
-    }
+        $key = $this->getCacheKey('_ver_' . $this->group);
 
-    private function getVer() {
         try {
-            $key = $this->prefix . '_ver_' . $this->group;
-            $ver = $this->link->get($key);
-            if (empty($ver)) {
-                /* 从 ssdb 中获取 */
-                $ver = ssdbService::getInstance()->zincr('cache_ver', $key, 1);
-                /* 设置到 memcached */
-                self::$ver[$this->group] = intval($ver);
-                $this->link->set($key, self::$ver[$this->group]);
-            } else {
-                /* 正常返回 */
-                self::$ver[$this->group] = intval($ver);
-                return self::$ver[$this->group];
+            $this->ver = $this->link->get($key);
+            if ($this->ver) {
+                return $this;
             }
+            /* 从 ssdb 中获取 */
+            $ver = ssdbService::getInstance()->zincr('cache_ver', $key, 1);
+            /* 设置到 memcached */
+            $this->ver = intval($ver);
+            $this->link->set($key, $this->ver);
+            /* 正常返回 */
+            return $this;
         } catch (\Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
         }
-        return 0;
+
+        return $this;
+    }
+
+    /**
+     * 获取实际的缓存标识
+     * @access protected
+     * @param  string $name 缓存名
+     * @return string
+     */
+    protected function getCacheKey($name) {
+        return $this->prefix . $name;
     }
 
     /**
@@ -143,23 +142,26 @@ class Cache {
      * @param type $group
      * @return type
      */
-    public function clear($group = '_cache_') {
-        $this->group = $group;
-        $key = $this->prefix . '_ver_' . $this->group;
+    public function clear() {
+        if ($this->group) {
+            $key = $this->getCacheKey('_ver_' . $this->group);
 
-        /* 获取新版本号 使用 ssdb */
-        $ver = ssdbService::getInstance()->zincr('cache_ver', $key, 1);
-        self::$ver[$this->group] = intval($ver);
+            /* 获取新版本号 使用 ssdb */
+            $ver = ssdbService::getInstance()->zincr('cache_ver', $key, 1);
+            $this->ver = intval($ver);
 
-        /* 写入 memcached 新版本号 */
-        try {
-            $this->link->set($key, self::$ver[$this->group]);
-            return self::$ver[$this->group];
-        } catch (\Exception $ex) {
-            //连接状态置为false
-            $this->isConnected = false;
-            $this->is_available();
+            /* 写入 memcached 新版本号 */
+            try {
+                $this->link->set($key, $this->ver);
+
+                return $this->ver;
+            } catch (\Exception $ex) {
+                //连接状态置为false
+                $this->isConnected = false;
+                $this->is_available();
+            }
         }
+        
         return false;
     }
 
@@ -169,8 +171,9 @@ class Cache {
      * @return type
      */
     public function get($cache_id) {
+        $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
+
         try {
-            $key = $this->prefix . self::$ver[$this->group] . '_' . $this->group . '_' . $cache_id;
             return $this->link->get($key);
         } catch (\Exception $ex) {
             //连接状态置为false
@@ -188,7 +191,7 @@ class Cache {
      * @return boolean
      */
     public function set($cache_id, $var, $expire = 0) {
-        $key = $this->prefix . self::$ver[$this->group] . '_' . $this->group . '_' . $cache_id;
+        $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
 
         try {
             if ($expire == 0) {
@@ -215,8 +218,9 @@ class Cache {
      * @return type
      */
     public function delete($cache_id) {
+        $key = $this->getCacheKey($this->ver . '_' . $this->group . '_' . $cache_id);
+
         try {
-            $key = $this->prefix . self::$ver[$this->group] . '_' . $this->group . '_' . $cache_id;
             return $this->link->delete($key);
         } catch (\Exception $ex) {
             //连接状态置为false
