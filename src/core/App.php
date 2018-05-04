@@ -295,7 +295,7 @@ class App {
             $json = json_encode($data, JSON_UNESCAPED_UNICODE);
             if ($json == false) {
                 Log::emerg($data);
-                throw new \Exception('服务器内部处理错误！', 500);
+                throw new \Exception('服务器内部处理错误！' . json_last_error_msg(), 500);
             }
             Response::getInstance()->clear()->contentType('application/json')->write($json)->send();
         } else {
