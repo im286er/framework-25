@@ -96,7 +96,7 @@ class Log {
         if (empty($message)) {
             return false;
         } else {
-            $message = is_array($message) ? json_encode($message, JSON_UNESCAPED_UNICODE) : $message;
+            $message = is_array($message) ? serialize($message) : $message;
         }
 
         if (empty($destination)) {

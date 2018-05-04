@@ -293,6 +293,10 @@ class App {
 
         if (is_object($data) || is_array($data)) {
             $json = json_encode($data, JSON_UNESCAPED_UNICODE);
+            if ($json == false) {
+                Log::emerg($data);
+                throw new \Exception('服务器内部处理错误！', 500);
+            }
             Response::getInstance()->clear()->contentType('application/json')->write($json)->send();
         } else {
             /* 字符输出 */
