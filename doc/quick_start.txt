@@ -2,7 +2,12 @@
 
 
 框架结构目录
-
+├── doc
+│   ├── db.txt
+│   ├── nginx.conf
+│   ├── nosql.txt
+│   ├── quick_start.txt
+│   └── route.txt
 ├── README.md                                       说明文件
 ├── src                                             框架源码
 │   ├── core                                 
@@ -26,14 +31,20 @@
 │   │       ├── MYSQLModel.php                 mysql模型类
 │   │       └── PGSQLModel.php                 pgsql模型类
 │   ├── nosql
-│   │   └── Cache.php                          memcached缓存类
-│   │   ├── SimpleSSDB.php                     ssdb基类供ssdbService.php调用
-│   │   └── ssdbService.php                    ssdb 服务类
+│   │   ├── Cache.php							memcached缓存类
+│   │   ├── delayQueue.php						延时队列
+│   │   ├── Flexihash.php						hash一致性
+│   │   ├── Queue.php							队列
+│   │   ├── Redis.php							redis缓存类
+│   │   ├── SimpleSSDB.php						ssdb基类供ssdbService.php调用
+│   │   └── ssdbService.php						ssdb 服务类
 │   └── tpl
 │       └── dispatch_jump.tpl.php                 跳转模板
-
-
-
+│       └── errors
+│           ├── error_404.tpl.php
+│           ├── error_exception.tpl.php
+│           ├── error_general.tpl.php
+│           └── error_php.tpl.php
 
 
 
