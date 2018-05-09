@@ -16,6 +16,41 @@ class delayQueue {
     }
 
     /**
+     * 设置value,用于序列化存储
+     * @param mixed $value
+     * @return mixed
+     */
+    public function setValue($value) {
+        if (!is_numeric($value)) {
+            try {
+                $value = json_encode($value, JSON_UNESCAPED_UNICODE);
+            } catch (Exception $exc) {
+                return false;
+            }
+        }
+        return $value;
+    }
+
+    /**
+     * 获取value,解析可能序列化的值
+     * @param mixed $value
+     * @return mixed
+     */
+    public function getValue($value, $default = false) {
+        if (is_null($value) || $value === false) {
+            return false;
+        }
+        if (!is_numeric($value)) {
+            try {
+                $value = json_decode($value, true);
+            } catch (Exception $exc) {
+                return $default;
+            }
+        }
+        return $value;
+    }
+
+    /**
      * 加入队列
      * @param   string      $queue_name     队列名称
      * @param   array       $data           数据
@@ -39,7 +74,7 @@ class delayQueue {
         $ttl = ($ttl <= 0) ? 10 : $ttl;
         $time = time() + $ttl;
         ssdbService::getInstance()->zset($zname, $id, $time);
-        ssdbService::getInstance()->hset($hname, $id, serialize($data));
+        ssdbService::getInstance()->hset($hname, $id, $this->setValue($data));
 
         /* 积压队列数量 */
         ssdbService::getInstance()->zincr('delay_queue', $queue_name, 1);
@@ -85,7 +120,7 @@ class delayQueue {
                 if (empty($value)) {
                     continue;
                 }
-                $data = unserialize($value);
+                $data = $this->getValue($value);
                 if ($data) {
                     $return_data[] = $data;
                 }
@@ -144,7 +179,7 @@ class delayQueue {
                     continue;
                 }
                 /* 存入正式队列 */
-                $data = unserialize($value);
+                $data = $this->getValue($value);
                 Queue::getInstance()->qpush($queue_name, $data);
             }
         }

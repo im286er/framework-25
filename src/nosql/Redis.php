@@ -165,7 +165,7 @@ class Redis {
     public function setValue($value) {
         if (!is_numeric($value)) {
             try {
-                $value = msgpack_pack($value);
+                $value = json_encode($value, JSON_UNESCAPED_UNICODE);
             } catch (Exception $exc) {
                 return false;
             }
@@ -184,7 +184,7 @@ class Redis {
         }
         if (!is_numeric($value)) {
             try {
-                $value = msgpack_unpack($value);
+                $value = json_decode($value, true);
             } catch (Exception $exc) {
                 return $default;
             }
