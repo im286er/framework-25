@@ -21,10 +21,18 @@ class RSACrypt {
             $this->pubkey = file_get_contents($rsa_public_key_file);
         }
         /* 加密私钥 */
-        $rsa_private_key_file = Config::get('rsa_private_key.pem');
+        $rsa_private_key_file = Config::get('rsa_private_key');
         if (is_file($rsa_private_key_file) && file_exists($rsa_private_key_file)) {
-            $this->pubkey = file_get_contents($rsa_private_key_file);
+            $this->privkey = file_get_contents($rsa_private_key_file);
         }
+    }
+
+    public static function getInstance() {
+        static $obj;
+        if (!$obj) {
+            $obj = new self();
+        }
+        return $obj;
     }
 
     /**
@@ -32,11 +40,11 @@ class RSACrypt {
      * @param $data
      * @return mixed|string
      */
-    public function encryptByPrivateKey($data) {
+    public function encode($data) {
         $pi_key = openssl_pkey_get_private($this->privkey);
         $encrypted = "";
         openssl_private_encrypt($data, $encrypted, $pi_key, OPENSSL_PKCS1_PADDING); //私钥加密
-        $encrypted = self::urlsafe_b64encode($encrypted); //加密后的内容通常含有特殊字符，需要编码转换下，在网络间通过url传输时要注意base64编码是否是url安全的
+        $encrypted = $this->urlsafe_b64encode($encrypted); //加密后的内容通常含有特殊字符，需要编码转换下，在网络间通过url传输时要注意base64编码是否是url安全的
         return $encrypted;
     }
 
@@ -45,10 +53,10 @@ class RSACrypt {
      * @param $data
      * @return string
      */
-    public function decryptByPublicKey($data) {
+    public function decode($data) {
         $pu_key = openssl_pkey_get_public($this->pubkey);
         $decrypted = "";
-        $data = self::urlsafe_b64decode($data);
+        $data = $this->urlsafe_b64decode($data);
 
         openssl_public_decrypt($data, $decrypted, $pu_key); //公钥解密
 
@@ -64,7 +72,7 @@ class RSACrypt {
         $pu_key = openssl_pkey_get_public($this->pubkey);
         $encrypted = "";
         openssl_public_encrypt($data, $encrypted, $pu_key, OPENSSL_PKCS1_PADDING); //公钥加密
-        $encrypted = self::urlsafe_b64encode($encrypted); //加密后的内容通常含有特殊字符，需要编码转换下，在网络间通过url传输时要注意base64编码是否是url安全的
+        $encrypted = $this->urlsafe_b64encode($encrypted); //加密后的内容通常含有特殊字符，需要编码转换下，在网络间通过url传输时要注意base64编码是否是url安全的
         return $encrypted;
     }
 
@@ -76,7 +84,7 @@ class RSACrypt {
     public function decryptByPrivateKey($data) {
         $pi_key = openssl_pkey_get_private($this->privkey);
         $decrypted = "";
-        $data = self::urlsafe_b64decode($data);
+        $data = $this->urlsafe_b64decode($data);
         openssl_private_decrypt($data, $decrypted, $pi_key); //私钥解密
         return $decrypted;
     }
@@ -86,10 +94,8 @@ class RSACrypt {
      * @param $string
      * @return mixed|string
      */
-    public static function urlsafe_b64encode($string) {
-        $data = base64_encode($string);
-        $data = str_replace(array('+', '/', '='), array('-', '_', '@'), $data);
-        return $data;
+    private function urlsafe_b64encode($string) {
+        return str_replace('=', '', strtr(base64_encode($string), '+/', '-_'));
     }
 
     /**
@@ -97,13 +103,13 @@ class RSACrypt {
      * @param $string
      * @return string
      */
-    public static function urlsafe_b64decode($string) {
-        $data = str_replace(array('-', '_', '@'), array('+', '/', '='), $string);
-        $mod4 = strlen($data) % 4;
-        if ($mod4) {
-            $data .= substr('====', $mod4);
+    private function urlsafe_b64decode($string) {
+        $remainder = strlen($string) % 4;
+        if ($remainder) {
+            $padlen = 4 - $remainder;
+            $string .= str_repeat('=', $padlen);
         }
-        return base64_decode($data);
+        return base64_decode(strtr($string, '-_', '+/'));
     }
 
 }

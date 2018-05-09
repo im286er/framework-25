@@ -34,9 +34,9 @@ class JWT {
             $this->pubkey = file_get_contents($rsa_public_key_file);
         }
         /* 加密私钥 */
-        $rsa_private_key_file = Config::get('rsa_private_key.pem');
+        $rsa_private_key_file = Config::get('rsa_private_key');
         if (is_file($rsa_private_key_file) && file_exists($rsa_private_key_file)) {
-            $this->pubkey = file_get_contents($rsa_private_key_file);
+            $this->privkey = file_get_contents($rsa_private_key_file);
         }
     }
 
@@ -55,26 +55,26 @@ class JWT {
      * @param array $allowed_algs
      * @return boolean / object
      */
-    public static function decode($jwt, $key = null, array $allowed_algs = ['RS256']) {
+    public function decode($jwt, $key = null, array $allowed_algs = ['RS256']) {
         $timestamp = is_null(static::$timestamp) ? time() : static::$timestamp;
 
         if (empty($key)) {
-            $key = $this->privkey;
+            $key = $this->pubkey;
         }
         $tks = explode('.', $jwt);
         if (count($tks) != 3) {
             return false;
         }
         list($headb64, $bodyb64, $cryptob64) = $tks;
-        if (null === ($header = static::jsonDecode(static::urlsafeB64Decode($headb64)))) {
+        if (null === ($header = $this->jsonDecode($this->urlsafeB64Decode($headb64)))) {
             // Invalid header encoding
             return false;
         }
-        if (null === $payload = static::jsonDecode(static::urlsafeB64Decode($bodyb64))) {
+        if (null === $payload = $this->jsonDecode($this->urlsafeB64Decode($bodyb64))) {
             // Invalid claims encoding
             return false;
         }
-        if (false === ($sig = static::urlsafeB64Decode($cryptob64))) {
+        if (false === ($sig = $this->urlsafeB64Decode($cryptob64))) {
             // Invalid signature encoding
             return false;
         }
@@ -103,7 +103,7 @@ class JWT {
             }
         }
 
-        if (!static::verify("$headb64.$bodyb64", $sig, $key, $header->alg)) {
+        if (!$this->verify("$headb64.$bodyb64", $sig, $key, $header->alg)) {
             // Signature verification failed
             return false;
         }
@@ -137,9 +137,9 @@ class JWT {
      * @param type $head
      * @return type
      */
-    public static function encode($payload, $key = null, $alg = 'RS256', $keyId = null, $head = null) {
+    public function encode($payload, $key = null, $alg = 'RS256', $keyId = null, $head = null) {
         if (empty($key)) {
-            $key = $this->pubkey;
+            $key = $this->privkey;
         }
         $header = array('typ' => 'JWT', 'alg' => $alg);
         if ($keyId !== null) {
@@ -149,12 +149,12 @@ class JWT {
             $header = array_merge($head, $header);
         }
         $segments = array();
-        $segments[] = static::urlsafeB64Encode(static::jsonEncode($header));
-        $segments[] = static::urlsafeB64Encode(static::jsonEncode($payload));
+        $segments[] = $this->urlsafeB64Encode($this->jsonEncode($header));
+        $segments[] = $this->urlsafeB64Encode($this->jsonEncode($payload));
         $signing_input = implode('.', $segments);
 
-        $signature = static::sign($signing_input, $key, $alg);
-        $segments[] = static::urlsafeB64Encode($signature);
+        $signature = $this->sign($signing_input, $key, $alg);
+        $segments[] = $this->urlsafeB64Encode($signature);
 
         return implode('.', $segments);
     }
@@ -167,7 +167,7 @@ class JWT {
      * @return string
      * @throws DomainException
      */
-    public static function sign($msg, $key, $alg = 'RS256') {
+    public function sign($msg, $key, $alg = 'RS256') {
         if (empty(static::$supported_algs[$alg])) {
             // Algorithm not supported
             return false;
@@ -197,7 +197,7 @@ class JWT {
      * @return boolean
      * @throws DomainException
      */
-    private static function verify($msg, $signature, $key, $alg) {
+    private function verify($msg, $signature, $key, $alg) {
         if (empty(static::$supported_algs[$alg])) {
             // Algorithm not supported
             return false;
@@ -220,13 +220,13 @@ class JWT {
                 if (function_exists('hash_equals')) {
                     return hash_equals($signature, $hash);
                 }
-                $len = min(static::safeStrlen($signature), static::safeStrlen($hash));
+                $len = min($this->safeStrlen($signature), $this->safeStrlen($hash));
 
                 $status = 0;
                 for ($i = 0; $i < $len; $i++) {
                     $status |= (ord($signature[$i]) ^ ord($hash[$i]));
                 }
-                $status |= (static::safeStrlen($signature) ^ static::safeStrlen($hash));
+                $status |= ($this->safeStrlen($signature) ^ $this->safeStrlen($hash));
 
                 return ($status === 0);
         }
@@ -237,7 +237,7 @@ class JWT {
      * @param type $input
      * @return boolean
      */
-    public static function jsonDecode($input) {
+    public function jsonDecode($input) {
         if (version_compare(PHP_VERSION, '5.4.0', '>=') && !(defined('JSON_C_VERSION') && PHP_INT_SIZE > 4)) {
             $obj = json_decode($input, false, 512, JSON_BIGINT_AS_STRING);
         } else {
@@ -247,7 +247,7 @@ class JWT {
         }
 
         if (function_exists('json_last_error') && $errno = json_last_error()) {
-            static::handleJsonError($errno);
+            $this->handleJsonError($errno);
         } elseif ($obj === null && $input !== 'null') {
             // Null result with non-null input
             return false;
@@ -260,10 +260,10 @@ class JWT {
      * @param type $input
      * @return boolean
      */
-    public static function jsonEncode($input) {
+    public function jsonEncode($input) {
         $json = json_encode($input);
         if (function_exists('json_last_error') && $errno = json_last_error()) {
-            static::handleJsonError($errno);
+            $this->handleJsonError($errno);
         } elseif ($json === 'null' && $input !== null) {
             // Null result with non-null input
             return false;
@@ -278,7 +278,7 @@ class JWT {
      *
      * @return string A decoded string
      */
-    public static function urlsafeB64Decode($input) {
+    public function urlsafeB64Decode($input) {
         $remainder = strlen($input) % 4;
         if ($remainder) {
             $padlen = 4 - $remainder;
@@ -305,7 +305,7 @@ class JWT {
      *
      * @return void
      */
-    private static function handleJsonError($errno) {
+    private function handleJsonError($errno) {
         $messages = array(
             JSON_ERROR_DEPTH => 'Maximum stack depth exceeded',
             JSON_ERROR_STATE_MISMATCH => 'Invalid or malformed JSON',
@@ -325,7 +325,7 @@ class JWT {
      *
      * @return int
      */
-    private static function safeStrlen($str) {
+    private function safeStrlen($str) {
         if (function_exists('mb_strlen')) {
             return mb_strlen($str, '8bit');
         }
