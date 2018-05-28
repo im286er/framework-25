@@ -17,12 +17,12 @@ class csrf {
      *  @return
      */
     public static function setToken() {
-        if (Session::getInstance()->get(Request::getInstance()->host() . '_hash_') === null) {
+        if (Session::getInstance()->get('_hash_') === null) {
             $token = substr(md5(time() . Request::getInstance()->get_user_agent()), 5, 8);
 
             Cookie::getInstance()->set('_hash_', $token, ['httponly' => true]);
 
-            Session::getInstance()->set(Request::getInstance()->host() . '_hash_', $token);
+            Session::getInstance()->set('_hash_', $token);
         }
     }
 
@@ -37,11 +37,11 @@ class csrf {
             return false;
         }
 
-        if (Session::getInstance()->get(Request::getInstance()->host() . '_hash_') === null) {
+        if (Session::getInstance()->get('_hash_') === null) {
             return false;
         }
 
-        if (Session::getInstance()->get(Request::getInstance()->host() . '_hash_') === Cookie::getInstance()->get('_hash_')) {
+        if (Session::getInstance()->get('_hash_') === Cookie::getInstance()->get('_hash_')) {
             return true;
         }
 
