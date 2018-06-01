@@ -143,21 +143,6 @@ class Redis {
     }
 
     /**
-     * 调用 Redis 自带方法
-     * @param type $method
-     * @param type $args
-     * @return type
-     * @throws \Exception
-     */
-    public function __call($method, $args) {
-        if (method_exists($this->_getConForKey(), $method)) {
-            return call_user_func_array(array($this->_getConForKey(), $method), $args);
-        } else {
-            throw new \Exception(__CLASS__ . ":{$method} is not exists!");
-        }
-    }
-
-    /**
      * 设置value,用于序列化存储
      * @param mixed $value
      * @return mixed
@@ -486,25 +471,99 @@ class Redis {
     }
 
     /**
-     * 从队列尾部加入
+     * 返回哈希表 key 中给定域 field 的值。
+     * @param type $cache_id    缓存名称
+     * @param type $id          ID
+     * @param type $default     默认返回　false
+     * @return boolean/给定域的值
+     */
+    public function hget($cache_id, $id, $default = false) {
+        $key = $this->getCacheKey($cache_id);
+        try {
+            $value = $this->_getConForKey($key)->hget($key, $id);
+
+            if (is_null($value) || false === $value) {
+                return $default;
+            }
+
+            return $this->getValue($value, $default);
+        } catch (\Exception $ex) {
+            //连接状态置为false
+            $this->isConnected = false;
+            $this->is_available();
+        }
+        return false;
+    }
+
+    /**
+     * 将哈希表 key 中的域 field 的值设为 value 。
+     * @param type $cache_id    缓存 key
+     * @param type $id          ID
+     * @param type $var         缓存值
+     * @return
+     */
+    public function hset($cache_id, $id, $var) {
+        $key = $this->getCacheKey($cache_id);
+        $var = $this->setValue($var);
+
+        try {
+            return $this->_getConForKey($key)->hset($key, $id, $var);
+        } catch (\Exception $ex) {
+            //连接状态置为false
+            $this->isConnected = false;
+            $this->is_available();
+        }
+        return false;
+    }
+
+    /**
+     * 删除哈希表 key 中的一个指定域，不存在的域将被忽略。
+     * @param type $cache_id
+     * @param type $id          ID
+     * @return boolean
+     */
+    public function hdel($cache_id, $id) {
+        $key = $this->getCacheKey($cache_id);
+
+        try {
+            return $this->_getConForKey($key)->hdel($key, $id);
+        } catch (\Exception $ex) {
+            //连接状态置为false
+            $this->isConnected = false;
+            $this->is_available();
+        }
+        return false;
+    }
+
+    /**
+     * 将一个或多个值 value 插入到列表 key 的表尾(最右边)。
      * @param type $name
      * @param type $data
      * @return type
      */
-    public function queue_push($name = 'queue_task', $data = []) {
-
+    public function rPush($name = 'queue_task', $data = []) {
         $data = $this->setValue($data);
-
         return $this->_getConForKey($name)->rPush($name, $data);
     }
 
     /**
-     * 从队列首部弹出
+     * 将一个值 value 插入到列表头部
+     * @param type $name
+     * @param type $data
+     * @return type
+     */
+    public function lPush($name = 'queue_task', $data = []) {
+        $data = $this->setValue($data);
+        return $this->_getConForKey($name)->lPush($name, $data);
+    }
+
+    /**
+     * 移除并返回列表 key 的尾元素。
      * @param type $name
      * @return boolean
      */
-    public function queue_pop($name = 'queue_task') {
-        $value = $this->_getConForKey($name)->lPop($name);
+    public function rPop($name = 'queue_task') {
+        $value = $this->_getConForKey($name)->rPop($name);
         if (is_null($value) || false === $value) {
             return false;
         }
@@ -512,45 +571,11 @@ class Redis {
     }
 
     /**
-     * 从队列首部弹出多个
-     * @param type $name
-     * @param type $size
-     * @return boolean
+     * 返回列表 key 的长度
+     * @param string $name
+     * @return boolean/int
      */
-    public function queue_multi_pop($name = 'queue_task', $size = 1) {
-        if ($size == 1) {
-            return $this->queue_pop($name);
-        }
-
-        $total = $this->queue_size($name);
-        if ($total == 0) {
-            return false;
-        }
-
-        $max = min($size, $total);
-
-        $data = [];
-
-        for ($i = 0; $i < $max; $i++) {
-            $value = $this->queue_pop($name);
-            if ($value) {
-                $data[$i] = $value;
-            }
-        }
-
-        if (empty($data)) {
-            return false;
-        }
-
-        return $data;
-    }
-
-    /**
-     * 查看队列数量
-     * @param type $name
-     * @return int
-     */
-    public function queue_size($name = 'queue_task') {
+    public function lLen($name = 'queue_task') {
         $rs = $this->_getConForKey($name)->lLen($name);
         if ($rs) {
             return $rs;

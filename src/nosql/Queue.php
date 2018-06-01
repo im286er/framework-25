@@ -86,14 +86,6 @@ class Queue {
     }
 
     /**
-     * 获取所有队列名称列表
-     * @return type
-     */
-    public function queue_list() {
-
-    }
-
-    /**
      * 查看队列数量
      * @param type $queue_name
      * @return int

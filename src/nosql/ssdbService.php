@@ -261,7 +261,7 @@ class ssdbService {
      * 返回值
      *      如果出错则返回 false, 否则返回新的值.
      */
-    public function incr($k, $v) {
+    public function incr($k, $v = 1) {
         if ($this->is_available()) {
             $v = intval($v);
             return $this->_getConForKey($k)->incr($k, $v);
