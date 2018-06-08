@@ -196,6 +196,28 @@ class delayQueue {
     }
 
     /**
+     * 删除指定队列的任务
+     * @param string $queue_name
+     * @param array $ids
+     * @return boolean
+     */
+    public function delete($queue_name = 'queue_task', $ids = []) {
+        if (empty($queue_name) || empty($ids)) {
+            return false;
+        }
+
+        $zname = "delay_queue_{$queue_name}";
+        $hname = "delay_queue_{$queue_name}";
+
+        foreach ($ids as $key => $id) {
+            ssdbService::getInstance()->zdel($zname, $id);
+            ssdbService::getInstance()->hdel($hname, $id);
+        }
+
+        return true;
+    }
+
+    /**
      * 获取所有延时队列名称列表
      * @param type $page
      * @param type $size
