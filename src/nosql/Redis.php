@@ -245,7 +245,8 @@ class Redis {
      * @return mixed
      */
     public function get($cache_id, $default = false) {
-        $key = $this->getCacheKey("{$this->group}_{$this->ver}_{$cache_id}");
+
+        $key = $this->getCacheKey("{$this->group}_{$cache_id}");
 
         try {
 
@@ -255,7 +256,11 @@ class Redis {
                 return $default;
             }
 
-            return $this->getValue($value, $default);
+            $data = $this->getValue($value, $default);
+
+            if ($data && $data['ver'] == $this->ver) {
+                return $data['data'];
+            }
         } catch (\Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -272,16 +277,18 @@ class Redis {
      * @return boolean
      */
     public function set($cache_id, $var, $ttl = 0) {
-        $key = $this->getCacheKey("{$this->group}_{$this->ver}_{$cache_id}");
-        $var = $this->setValue($var);
+        $key = $this->getCacheKey("{$this->group}_{$cache_id}");
+
+        /* 缓存数据 */
+        $data = $this->setValue(['ver' => $this->ver, 'data' => $var]);
 
         try {
             if ($ttl == 0) {
                 // 缓存 3.5 天
-                return $this->_getConForKey($key)->setex($key, 302400, $var);
+                return $this->_getConForKey($key)->setex($key, 302400, $data);
             } else {
                 // 有时间限制
-                return $this->_getConForKey($key)->setex($key, $ttl, $var);
+                return $this->_getConForKey($key)->setex($key, $ttl, $data);
             }
         } catch (\Exception $ex) {
             //连接状态置为false
@@ -297,7 +304,7 @@ class Redis {
      * @return type
      */
     public function delete($cache_id) {
-        $key = $this->getCacheKey("{$this->group}_{$this->ver}_{$cache_id}");
+        $key = $this->getCacheKey("{$this->group}_{$cache_id}");
 
         try {
             return $this->_getConForKey($key)->delete($key);
