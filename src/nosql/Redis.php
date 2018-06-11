@@ -284,8 +284,8 @@ class Redis {
 
         try {
             if ($ttl == 0) {
-                // 缓存 3.5 天
-                return $this->_getConForKey($key)->setex($key, 302400, $data);
+                // 缓存 7.5 天
+                return $this->_getConForKey($key)->setex($key, 648000, $data);
             } else {
                 // 有时间限制
                 return $this->_getConForKey($key)->setex($key, $ttl, $data);
@@ -562,6 +562,19 @@ class Redis {
     public function lPush($name = 'queue_task', $data = []) {
         $data = $this->setValue($data);
         return $this->_getConForKey($name)->lPush($name, $data);
+    }
+
+    /**
+     * 命令用于移除并返回列表的第一个元素
+     * @param type $name
+     * @return boolean
+     */
+    public function lPop($name = 'queue_task') {
+        $value = $this->_getConForKey($name)->lPop($name);
+        if (is_null($value) || false === $value) {
+            return false;
+        }
+        return $this->getValue($value, false);
     }
 
     /**

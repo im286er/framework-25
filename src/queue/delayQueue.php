@@ -1,6 +1,9 @@
 <?php
 
-namespace framework\nosql;
+namespace framework\queue;
+
+use framework\nosql\Cache;
+use framework\nosql\ssdbService;
 
 /**
  * 延时队列
@@ -180,7 +183,7 @@ class delayQueue {
                 }
                 /* 存入正式队列 */
                 $data = $this->getValue($value);
-                Queue::getInstance()->qpush($queue_name, $data);
+                RedisQueue::getInstance()->qpush($queue_name, $data);
             }
         }
 

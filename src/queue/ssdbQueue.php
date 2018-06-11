@@ -7,7 +7,7 @@ use framework\nosql\ssdbService;
 /**
  * ssdbQueue
  */
-class ssdbQueue implements IQueue {
+class ssdbQueue {
 
     public static function getInstance() {
         static $obj;
@@ -52,112 +52,62 @@ class ssdbQueue implements IQueue {
         return $value;
     }
 
-    /**
-     * @param $queueName
-     * @return string
-     */
-    protected function getQueueKey($queueName) {
-        return $queueName . '_QUEUE_KEY';
-    }
-
-    /**
-     * 弹出队列数据
-     * @param $queueName
-     * @return mixed|null
-     */
-    protected function qpop_single($queueName) {
-        $queueKey = $this->getQueueKey($queueName);
-        $delayData = ssdbService::getInstance()->qpop_front("{$queueKey}.delayed");
-
-        $delayData = $this->getValue($delayData);
-        if ($delayData) {
-            if ($delayData['time'] > time()) {
-                ssdbService::getInstance()->qpush_back("{$queueKey}.delayed", $this->setValue($delayData));
-            } else {
-                ssdbService::getInstance()->qpush_back("{$queueKey}.waiting", $delayData['id']);
-            }
-        }
-
-        /* 弹出 */
-        $id = ssdbService::getInstance()->qpop_front("{$queueKey}.waiting");
-        if ($id) {
-            $message = ssdbService::getInstance()->hget("{$queueKey}.messages", $id);
-
-            $message = $this->getValue($message);
-            if ($message) {
-                ssdbService::getInstance()->hdel("{$queueKey}.messages", $id);
-                return $message;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * 从队列首部弹出多个
-     * @param       string      $name
-     * @param       int         $size    默认 1
-     * @return      boolean/array
-     */
-    public function qpop($name = 'queue_task', $size = 1) {
-        if ($size == 1) {
-            return $this->qpop_single($name);
-        }
-
-        $total = $this->size($name);
-        if ($total == 0) {
-            return false;
-        }
-
-        $max = min($size, $total);
-
-        $data = [];
-
-        for ($i = 0; $i < $max; $i++) {
-            $value = $this->qpop_single($name);
-            if ($value) {
-                $data[$i] = $value;
-            }
-        }
-
-        if (empty($data)) {
-            return false;
-        }
-
-        return $data;
+    protected function getQueueKey($queue_name) {
+        return 'queue_' . $queue_name;
     }
 
     /**
      * 加入队列
-     * @param $queueName
-     * @param $data
-     * @param int $delay
-     * @return int
+     * @param   string      $queue_name     队列名称
+     * @param   array       $data           数据
+     * @return boolean
      */
-    public function qpush($queueName, $data, $delay = 0) {
-        $queueKey = $this->getQueueKey($queueName);
-        $id = ssdbService::getInstance()->incr("{$queueKey}.message_id");
+    public function qpush($queue_name = 'queue_task', $data = []) {
+        $queue_name = $this->getQueueKey($queue_name);
 
-        ssdbService::getInstance()->hset("{$queueKey}.messages", $id, $this->setValue($data));
-        if ($delay) {
-            $delayData = [
-                'id' => $id,
-                'time' => time() + $delay,
-            ];
-            ssdbService::getInstance()->qpush_back("{$queueKey}.delayed", $delayData);
-        } else {
-            ssdbService::getInstance()->qpush_back("{$queueKey}.waiting", $id);
-        }
-        return $id;
+        return ssdbService::getInstance()->qpush($queue_name, $this->setValue($data));
     }
 
     /**
-     * @param $queueName
+     * 弹出队列数据
+     * @param   string      $queue_name     队列名称
+     * @param   int         $size           数量
+     * @return boolean/array
+     */
+    public function qpop($queue_name = 'queue_task', $size = 1) {
+        $queue_name = $this->getQueueKey($queue_name);
+
+        if ($size == 1) {
+            $vo = ssdbService::getInstance()->qpop_front($queue_name, $size);
+            if ($vo) {
+                return $this->getValue($vo);
+            }
+            return false;
+        }
+        $list = ssdbService::getInstance()->qpop_front($queue_name, $size);
+        if ($list) {
+            $data = [];
+            foreach ($list as $key => $value) {
+                $data[$key] = $this->getValue($value);
+            }
+            return $data;
+        }
+        return false;
+    }
+
+    /**
+     * 查看队列数量
+     * @param type $queue_name
      * @return int
      */
-    public function size($queueName) {
-        $queueKey = $this->getQueueKey($queueName);
-        return ssdbService::getInstance()->qsize("{$queueKey}.waiting");
+    public function size($queue_name = 'queue_task') {
+        $queue_name = $this->getQueueKey($queue_name);
+
+        $rs = ssdbService::getInstance()->qsize($queue_name);
+        if ($rs) {
+            return $rs;
+        }
+        return 0;
     }
 
 }

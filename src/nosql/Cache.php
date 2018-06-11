@@ -199,8 +199,8 @@ class Cache {
 
         try {
             if ($expire == 0) {
-                // 缓存 3.5 天
-                return $this->link->set($key, $var, MEMCACHE_COMPRESSED, 302400);
+                // 缓存 6.5 天
+                return $this->link->set($key, $var, MEMCACHE_COMPRESSED, 648000);
             } else {
                 // 有时间限制
                 if ($expire >= 2592000) {
@@ -313,8 +313,8 @@ class Cache {
         $key = $this->prefix . $cache_id;
         try {
             if ($expire == 0) {
-                // 缓存 7 天
-                return $this->link->set($key, $var, MEMCACHE_COMPRESSED, 604800);
+                // 缓存 7.5 天
+                return $this->link->set($key, $var, MEMCACHE_COMPRESSED, 648000);
             } else {
                 // 有时间限制
                 if ($expire >= 2592000) {
