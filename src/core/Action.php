@@ -23,7 +23,7 @@ abstract class Action {
 
     // 初始化
     function __initialize() {
-        
+
     }
 
     /**
@@ -242,7 +242,7 @@ abstract class Action {
         }
         // 成功操作后默认停留1秒
         if (0 === $time) {
-            $this->assign('waitSecond', '1');
+            $this->assign('waitSecond', 1);
         } else {
             $this->assign('waitSecond', $time);
         }
@@ -293,7 +293,7 @@ abstract class Action {
             $this->assign('message', $message); // 提示信息
             // 成功操作后默认停留1秒
             if (!isset($this->waitSecond)) {
-                $this->assign('waitSecond', '1');
+                $this->assign('waitSecond', 1);
             }
             // 默认操作成功自动返回操作前页面
             if (!isset($this->jumpUrl)) {
@@ -304,7 +304,7 @@ abstract class Action {
             $this->assign('error', $message); // 提示信息
             //发生错误时候默认停留3秒
             if (!isset($this->waitSecond)) {
-                $this->assign('waitSecond', '3');
+                $this->assign('waitSecond', 3);
             }
             // 默认发生错误的话自动返回上页
             if (!isset($this->jumpUrl)) {
