@@ -296,8 +296,11 @@ class App {
             Response::getInstance()->clear()->contentType('application/json')->write($json)->send();
         } else {
             /* 字符输出 */
-            Response::getInstance()->write($data)->send();
+            if (!empty($data)) {
+                Response::getInstance()->write($data)->send();
+            }
         }
+        return;
     }
 
 }
