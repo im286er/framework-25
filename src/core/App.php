@@ -287,10 +287,6 @@ class App {
         }
 
         /* 输出 */
-        if (empty($data)) {
-            return false;
-        }
-
         if (is_object($data) || is_array($data)) {
             $json = json_encode($data, JSON_UNESCAPED_UNICODE);
             if ($json == false) {
