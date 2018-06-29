@@ -212,7 +212,14 @@ class delayQueue {
         $zname = "delay_queue_{$queue_name}";
         $hname = "delay_queue_{$queue_name}";
 
-        foreach ($ids as $key => $id) {
+        if (is_array($ids)) {
+            foreach ($ids as $key => $id) {
+                ssdbService::getInstance()->zdel($zname, $id);
+                ssdbService::getInstance()->hdel($hname, $id);
+            }
+        }
+
+        if (is_numeric($ids)) {
             ssdbService::getInstance()->zdel($zname, $id);
             ssdbService::getInstance()->hdel($hname, $id);
         }
