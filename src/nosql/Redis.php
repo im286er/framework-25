@@ -604,6 +604,157 @@ class Redis {
     }
 
     /**
+     * 设置 zset 中指定 key 对应的权重值.
+     * 参数
+     *     name - zset 的名字.
+     *     key - zset 中的 key.
+     *     score - 整数, key 对应的权重值
+     * 返回值
+     *      出错则返回 false, 其它值表示正常.
+     */
+    public function zset($name, $k, $v) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zAdd($name, $v, $k);
+        }
+        return false;
+    }
+
+    /**
+     * 获取  中指定 key 的权重值.
+     * 参数
+     *       name - zset 的名字.
+     *       key - zset 中的 key.
+     * 返回值
+     *       如果 key 不存在则返回 null, 如果出错则返回 false, 否则返回 key 对应的权重值.
+     */
+    public function zget($name, $k) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zScore($name, $k);
+        }
+        return false;
+    }
+
+    /**
+     * 获取 zset 中的指定 key.
+     * 参数
+     *        name - zset 的名字.
+     *        key - zset 中的 key.
+     * 返回值
+     *        如果出错则返回 false, 其它值表示正常. 你无法通过返回值来判断被删除的 key 是否存在.
+     */
+    public function zdel($name, $k) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zDelete($name, $k);
+        }
+        return false;
+    }
+
+    /**
+     * 使 zset 中的 key 对应的值增加 num. 参数 num 可以为负数
+     * 参数
+     *      name - zset 的名字.
+     *      key -
+     *      num - 必须是有符号整数.
+     * 返回值
+     *      如果出错则返回 false, 否则返回新的值.
+     */
+    public function zincr($name, $k, $v) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zIncrBy($name, $k, $v);
+        }
+        return false;
+    }
+
+    /**
+     * 判断指定的 key 是否存在于 zset 中.
+     * 参数
+     *      name - zset 的名字.
+     *      key -
+     * 返回值
+     *      如果存在, 返回 true, 否则返回 false.
+     */
+    public function zexists($name, $k) {
+        if ($this->is_available()) {
+            $rs = $this->_getConForKey($name)->zScore($name, $k);
+            if ($rs == false) {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 返回 zset 中的元素个数.
+     * 参数
+     *       name - zset 的名字.
+     * 返回值
+     *       出错则返回 false, 否则返回元素的个数, 0 表示不存在 zset(空).
+     */
+    public function zsize($name) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zSize($name);
+        }
+        return false;
+    }
+
+    /**
+     * zrange, zrrange
+     * 注意! 本方法在 offset 越来越大时, 会越慢!
+     * 根据下标索引区间 [offset, offset + limit) 获取 key-score 对, 下标从 0 开始. zrrange 是反向顺序获取.
+     * 参数
+     *      name - zset 的名字.
+     *      offset - 正整数, 从此下标处开始返回. 从 0 开始.
+     *      limit - 正整数, 最多返回这么多个 key-score 对.
+     * 返回值
+     *      如果出错则返回 false, 否则返回包含 key-score 的关联数组.
+     */
+    public function zrange($name, $offset, $limit) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zRange($name, $offset, $limit, true);
+        }
+        return false;
+    }
+
+    public function zrrange($name, $offset, $limit) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zRevRange($name, $offset, $limit, true);
+        }
+        return false;
+    }
+
+    /**
+     * 删除 zset 中的所有 key.
+     * 参数
+     *      name - zset 的名字.
+     * 返回值
+     *      如果出错则返回 false, 否则返回删除的 key 的数量.
+     */
+    public function zclear($name) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->delete($name);
+        }
+        return false;
+    }
+
+    /**
+     *
+     * 返回处于区间 [start,end] key 数量.
+     * 参数
+     *       name - zset 的名字.
+     *       score_start - key 的最小权重值(包含), 空字符串表示 -inf.
+     *       score_end - key 的最大权重值(包含), 空字符串表示 +inf.
+     * 返回值
+     *       如果出错则返回 false, 否则返回符合条件的 key 的数量.
+     */
+    public function zcount($name, $score_start, $score_end) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zCount($name, $score_start, $score_end);
+        }
+        return false;
+    }
+
+    /**
      * 获取状态
      * @return type
      */
