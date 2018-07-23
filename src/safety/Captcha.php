@@ -20,15 +20,14 @@ class Captcha {
      * @return string
      */
     public static function buildImageVerify($width = 80, $height = 30, $verifyName = 'verify') {
-        $secret = GoogleAuthenticator::genSecret();
+
+        $rand_code = random_int(100000, 999999);
 
         $cache_id = Request::getInstance()->ip(0, true) . Request::getInstance()->get_user_agent() . $verifyName;
         $cache_id = md5($cache_id);
-        Cache::getInstance()->group('_captcha_')->set($cache_id, $secret, 600);
+        Cache::getInstance()->group('_captcha_')->set($cache_id, $rand_code, 900);
 
-        $randval = GoogleAuthenticator::getCode($secret);
-
-        $length = mb_strlen($randval);
+        $length = mb_strlen($rand_code);
         $width = ($length * 10 + 10) > $width ? $length * 10 + 10 : $width;
 
         $im = imagecreatetruecolor($width, $height) or die("Cannot Initialize new GD image stream");
@@ -52,7 +51,7 @@ class Captcha {
         /* 写入文字 */
         for ($i = 0; $i < $length; $i++) {
             $stringColor = imagecolorallocate($im, mt_rand(1, 150), mt_rand(1, 120), mt_rand(1, 160));
-            imagestring($im, 10, ($i * 11 + 6), mt_rand(1, ($height - 15)), $randval{$i}, $stringColor);
+            imagestring($im, 10, ($i * 11 + 6), mt_rand(1, ($height - 15)), $rand_code{$i}, $stringColor);
         }
 
         ob_clean();
@@ -157,21 +156,22 @@ class Captcha {
 
     /**
      * 检查纯数字验证码
-     * @param type $code
+     * @param type $input
      * @param type $verifyName
      * @return boolean
      */
-    public static function check($code, $verifyName = 'verify') {
+    public static function check($input, $verifyName = 'verify') {
         $cache_id = Request::getInstance()->ip(0, true) . Request::getInstance()->get_user_agent() . $verifyName;
         $cache_id = md5($cache_id);
 
-        $secret = Cache::getInstance()->group('_captcha_')->get($cache_id);
+        $code = Cache::getInstance()->group('_captcha_')->get($cache_id);
         Cache::getInstance()->group('_captcha_')->delete($cache_id);
 
-        if ($secret == null) {
+        if ($code === false || $code != $input) {
             return false;
+        } else {
+            return true;
         }
-        return GoogleAuthenticator::checkCode($secret, $code);
     }
 
 }
