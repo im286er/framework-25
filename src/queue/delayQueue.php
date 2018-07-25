@@ -224,6 +224,10 @@ class delayQueue {
             ssdbService::getInstance()->hdel($hname, $id);
         }
 
+        /* 修正统计 */
+        $total = $this->size($queue_name);
+        ssdbService::getInstance()->zset('delay_queue', $queue_name, $total);
+
         return true;
     }
 
