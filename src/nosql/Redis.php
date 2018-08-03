@@ -478,6 +478,23 @@ class Redis {
     }
 
     /**
+     * 列出处于区间 (key_start, key_end] 的 key-value 列表.
+     * ("", ""] 表示整个区间.
+     * 参数
+     *      key_start - 返回的起始 key(不包含), 空字符串表示 -inf.
+     *      key_end - 返回的结束 key(包含), 空字符串表示 +inf.
+     *      limit - 最多返回这么多个元素.
+     * 返回值
+     *      如果出错则返回 false, 否则返回包含 key-value 的数关联组.
+     */
+    public function scan($key_start, $key_end, $limit) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($key_start)->scan($key_start, $key_end, $limit);
+        }
+        return false;
+    }
+
+    /**
      * 返回哈希表 key 中给定域 field 的值。
      * @param type $cache_id    缓存名称
      * @param type $id          ID
@@ -503,7 +520,7 @@ class Redis {
     }
 
     /**
-     * 将哈希表 key 中的域 field 的值设为 value 。
+     * 将哈希表 key 中的域 id 的值设为 value, 如果不存在id ，会自动创建
      * @param type $cache_id    缓存 key
      * @param type $id          ID
      * @param type $var         缓存值
@@ -524,6 +541,71 @@ class Redis {
     }
 
     /**
+     * 将哈希表 key 中的域 id 的值设为 value, 如果不存在ID的情况下，设置成功
+     * @param type $cache_id    缓存 key
+     * @param type $id          ID
+     * @param type $var         缓存值
+     * @return
+     */
+    public function hsetnx($cache_id, $id, $var) {
+        $key = $this->getCacheKey($cache_id);
+        $var = $this->setValue($var);
+
+        try {
+            return $this->_getConForKey($key)->hSetNx($key, $id, $var);
+        } catch (\Exception $ex) {
+            //连接状态置为false
+            $this->isConnected = false;
+            $this->is_available();
+        }
+        return false;
+    }
+
+    /**
+     * 将哈希表 key 中的域 id 的值加 step
+     * @param type $cache_id
+     * @param type $id
+     * @param int $step        整数或浮点数
+     */
+    public function hincr($cache_id, $id, $step = 1) {
+        $key = $this->getCacheKey($cache_id);
+        $var = $this->setValue($var);
+
+        try {
+
+            if (is_int($step) == true) {
+                return $this->_getConForKey($key)->hIncrBy($key, $id, $step);
+            }
+
+            if (is_float($step) == false) {
+                return $this->_getConForKey($key)->hIncrByFloat($key, $id, $step);
+            }
+
+            return false;
+        } catch (\Exception $ex) {
+            //连接状态置为false
+            $this->isConnected = false;
+            $this->is_available();
+        }
+        return false;
+    }
+
+    /**
+     * 判断指定的 key 是否存在于 hashmap 中.
+     * 参数
+     *      name - hashmap 的名字.
+     *      key -
+     * 返回值
+     *      如果存在, 返回 true, 否则返回 false.
+     */
+    public function hexists($name, $k) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->hExists($name, $k);
+        }
+        return false;
+    }
+
+    /**
      * 删除哈希表 key 中的一个指定域，不存在的域将被忽略。
      * @param type $cache_id
      * @param type $id          ID
@@ -538,6 +620,34 @@ class Redis {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
+        }
+        return false;
+    }
+
+    /**
+     * 返回 hashmap 中的元素个数.
+     * 参数
+     *      name - hashmap 的名字.
+     * 返回值
+     *      出错则返回 false, 否则返回元素的个数, 0 表示不存在 hashmap(空).
+     */
+    public function hsize($name) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->hLen($name);
+        }
+        return false;
+    }
+
+    /**
+     * 返回整个 hashmap.
+     * 参数
+     *      name - hashmap 的名字.
+     * 返回值
+     *      如果出错则返回 false, 否则返回包含 key-value 的关联数组.
+     */
+    public function hgetall($name) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->hGetAll($name);
         }
         return false;
     }
