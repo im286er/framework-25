@@ -245,44 +245,15 @@ class Cache {
      */
     public function lock($cache_id, $ttl = 5) {
         $key = "lock_{$cache_id}";
-        try {
-            $rs = $this->link->get($key);
-            if ($rs) {
-                return false;
-            }
-        } catch (\Exception $ex) {
-            //连接状态置为false
-            $this->isConnected = false;
-            $this->is_available();
-            return false;
-        }
 
         try {
-            return $this->link->set($key, '1', 0, $ttl);
+            return $this->link->add($key, '1', 0, $ttl);
         } catch (\Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
         }
         return false;
-    }
-
-    /**
-     * 判断键名是否有锁标记;<br>
-     * 此方法可用于防止惊群现象发生,在get方法获取键值无效时,判断键名是否有锁标记
-     * @param string $cache_id   键名
-     * @return boolean      是否加锁
-     */
-    public function is_lock($cache_id) {
-        $key = "lock_{$cache_id}";
-        try {
-            return (boolean) $this->link->get($key);
-        } catch (\Exception $ex) {
-            //连接状态置为false
-            $this->isConnected = false;
-            $this->is_available();
-        }
-        return true;
     }
 
     /**

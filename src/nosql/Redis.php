@@ -327,25 +327,21 @@ class Redis {
      */
     public function lock($cache_id, $ttl = 5) {
         $key = "lock_{$cache_id}";
+        $key = $this->getCacheKey($cache_id);
 
-        $rs = $this->simple_get($key);
-        if ($rs == true) {
-            return false;
+        if ($ttl <= 0) {
+            $ttl = 1;
         }
 
-        return $this->simple_set($key, true, $ttl);
-    }
-
-    /**
-     * 判断键名是否有锁标记;<br>
-     * 此方法可用于防止惊群现象发生,在get方法获取键值无效时,判断键名是否有锁标记
-     * @param string $cache_id   键名
-     * @return boolean      是否加锁
-     */
-    public function is_lock($cache_id) {
-        $key = "lock_{$cache_id}";
-
-        return $this->simple_get($key);
+        try {
+            // 有时间限制
+            return $this->_getConForKey($key)->set($key, 1, array('nx', 'ex' => $ttl));
+        } catch (\Exception $ex) {
+            //连接状态置为false
+            $this->isConnected = false;
+            $this->is_available();
+        }
+        return false;
     }
 
     /**
