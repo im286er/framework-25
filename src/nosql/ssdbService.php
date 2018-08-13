@@ -35,7 +35,7 @@ class ssdbService {
     private $maxReConnected = 3;
 
     public function __construct($conf_name = 'ssdb_cache') {
-        $this->conf = Config::get($conf_name);
+        $this->conf = Config::getInstance()->get($conf_name);
 
         $this->connect();
     }

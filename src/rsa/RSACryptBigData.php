@@ -14,12 +14,12 @@ class RSACryptBigData {
 
     function __construct() {
         /* 解密公钥 */
-        $rsa_public_key_file = Config::get('rsa_public_key');
+        $rsa_public_key_file = Config::getInstance()->get('rsa_public_key');
         if (is_file($rsa_public_key_file) && file_exists($rsa_public_key_file)) {
             $this->pubkey = file_get_contents($rsa_public_key_file);
         }
         /* 加密私钥 */
-        $rsa_private_key_file = Config::get('rsa_private_key');
+        $rsa_private_key_file = Config::getInstance()->get('rsa_private_key');
         if (is_file($rsa_private_key_file) && file_exists($rsa_private_key_file)) {
             $this->privkey = file_get_contents($rsa_private_key_file);
         }

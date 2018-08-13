@@ -43,7 +43,7 @@ class Redis {
             throw new Exception('当前环境不支持: redis');
         }
 
-        $this->conf = Config::get('redis_cache');
+        $this->conf = Config::getInstance()->get('redis_cache');
 
         if (empty($this->conf)) {
             throw new Exception('请配置 redis !');

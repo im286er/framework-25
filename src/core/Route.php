@@ -17,14 +17,14 @@ class Route {
             return false;
         }
         /* URL映射定义（静态路由） */
-        $maps = Config::get('URL_MAP_RULES');
+        $maps = Config::getInstance()->get('URL_MAP_RULES');
         if (isset($maps[$regx])) {
             $var = self::parseUrl($maps[$regx]);
             $_GET = array_merge($var, $_GET);
             return true;
         }
         /* 路由处理 */
-        $routes = Config::get('routes');
+        $routes = Config::getInstance()->get('routes');
 
         if (empty($routes)) {
             return false;

@@ -54,17 +54,17 @@ class App {
         }
 
         /*  子域名部署 */
-        if (Config::get('APP_SUB_DOMAIN_DEPLOY') && ((php_sapi_name() != "cli"))) {
+        if (Config::getInstance()->get('APP_SUB_DOMAIN_DEPLOY') && ((php_sapi_name() != "cli"))) {
 
             $host = empty($_SERVER['HTTP_HOST']) ? $_SERVER['SERVER_NAME'] : $_SERVER['HTTP_HOST'];
 
-            $rules = Config::get('APP_SUB_DOMAIN_RULES');
+            $rules = Config::getInstance()->get('APP_SUB_DOMAIN_RULES');
             /* 完整域名或者IP配置 */
             if (isset($rules[$host])) {
                 /* 当前完整域名 */
                 $rule = $rules[$host];
             } else {
-                if (strpos(Config::get('APP_DOMAIN_SUFFIX'), '.')) { // com.cn net.cn
+                if (strpos(Config::getInstance()->get('APP_DOMAIN_SUFFIX'), '.')) { // com.cn net.cn
                     $domain = array_slice(explode('.', $host), 0, -3);
                 } else {
                     $domain = array_slice(explode('.', $host), 0, -2);
@@ -124,9 +124,9 @@ class App {
             /* 默认规则调度URL */
             $paths = explode('/', trim($_SERVER['PATH_INFO'], '/'));
 
-            if (Config::get('APP_GROUP_LIST') && !isset($_GET['app'])) {
-                $app = in_array(strtolower($paths[0]), explode(',', strtolower(Config::get('APP_GROUP_LIST')))) ? array_shift($paths) : 'www';
-                if (Config::get('APP_GROUP_DENY') && in_array(strtolower($app), explode(',', strtolower(Config::get('APP_GROUP_DENY'))))) {
+            if (Config::getInstance()->get('APP_GROUP_LIST') && !isset($_GET['app'])) {
+                $app = in_array(strtolower($paths[0]), explode(',', strtolower(Config::getInstance()->get('APP_GROUP_LIST')))) ? array_shift($paths) : 'www';
+                if (Config::getInstance()->get('APP_GROUP_DENY') && in_array(strtolower($app), explode(',', strtolower(Config::getInstance()->get('APP_GROUP_DENY'))))) {
                     // 禁止直接访问分组
                     exit();
                 }
@@ -136,22 +136,22 @@ class App {
         }
 
         /* 载入分组配置 */
-        Config::load(APP_PATH . $this->app_name . '/config/');
+        Config::getInstance()->load(APP_PATH . $this->app_name . '/config/');
 
         // URL后缀
         $_ext = strtolower(pathinfo($_SERVER['PATH_INFO'], PATHINFO_EXTENSION));
 
         // 去除URL后缀
-        $_SERVER['PATH_INFO'] = preg_replace(Config::get('URL_HTML_SUFFIX') ? '/\.(' . trim(Config::get('URL_HTML_SUFFIX'), '.') . ')$/i' : '/\.' . $_ext . '$/i', '', $_SERVER['PATH_INFO']);
+        $_SERVER['PATH_INFO'] = preg_replace(Config::getInstance()->get('URL_HTML_SUFFIX') ? '/\.(' . trim(Config::getInstance()->get('URL_HTML_SUFFIX'), '.') . ')$/i' : '/\.' . $_ext . '$/i', '', $_SERVER['PATH_INFO']);
 
         // 检测路由规则 如果没有则按默认规则调度URL
         if (!Route::routerCheck()) {
             /* 默认规则调度URL */
             $paths = explode('/', trim($_SERVER['PATH_INFO'], '/'));
             $var = [];
-            if (Config::get('APP_GROUP_LIST') && !isset($_GET['app'])) {
-                $var['app'] = in_array(strtolower($paths[0]), explode(',', Config::get('APP_GROUP_LIST'))) ? strtolower(array_shift($paths)) : 'www';
-                if (Config::get('APP_GROUP_DENY') && in_array($var['app'], explode(',', Config::get('APP_GROUP_DENY')))) {
+            if (Config::getInstance()->get('APP_GROUP_LIST') && !isset($_GET['app'])) {
+                $var['app'] = in_array(strtolower($paths[0]), explode(',', Config::getInstance()->get('APP_GROUP_LIST'))) ? strtolower(array_shift($paths)) : 'www';
+                if (Config::getInstance()->get('APP_GROUP_DENY') && in_array($var['app'], explode(',', Config::getInstance()->get('APP_GROUP_DENY')))) {
                     // 禁止直接访问分组
                     exit();
                 }
@@ -300,17 +300,17 @@ class App {
         unset($uri);
 
         /*  子域名部署 */
-        if ((Config::get('APP_SUB_DOMAIN_DEPLOY'))) {
+        if ((Config::getInstance()->get('APP_SUB_DOMAIN_DEPLOY'))) {
 
             $host = empty($_SERVER['HTTP_HOST']) ? $_SERVER['SERVER_NAME'] : $_SERVER['HTTP_HOST'];
 
-            $rules = Config::get('APP_SUB_DOMAIN_RULES');
+            $rules = Config::getInstance()->get('APP_SUB_DOMAIN_RULES');
             /* 完整域名或者IP配置 */
             if (isset($rules[$host])) {
                 /* 当前完整域名 */
                 $rule = $rules[$host];
             } else {
-                if (strpos(Config::get('APP_DOMAIN_SUFFIX'), '.')) { // com.cn net.cn
+                if (strpos(Config::getInstance()->get('APP_DOMAIN_SUFFIX'), '.')) { // com.cn net.cn
                     $domain = array_slice(explode('.', $host), 0, -3);
                 } else {
                     $domain = array_slice(explode('.', $host), 0, -2);
@@ -370,9 +370,9 @@ class App {
             /* 默认规则调度URL */
             $paths = explode('/', trim($_SERVER['PATH_INFO'], '/'));
 
-            if (Config::get('APP_GROUP_LIST') && !isset($_GET['app'])) {
-                $app = in_array(strtolower($paths[0]), explode(',', strtolower(Config::get('APP_GROUP_LIST')))) ? array_shift($paths) : 'www';
-                if (Config::get('APP_GROUP_DENY') && in_array(strtolower($app), explode(',', strtolower(Config::get('APP_GROUP_DENY'))))) {
+            if (Config::getInstance()->get('APP_GROUP_LIST') && !isset($_GET['app'])) {
+                $app = in_array(strtolower($paths[0]), explode(',', strtolower(Config::getInstance()->get('APP_GROUP_LIST')))) ? array_shift($paths) : 'www';
+                if (Config::getInstance()->get('APP_GROUP_DENY') && in_array(strtolower($app), explode(',', strtolower(Config::getInstance()->get('APP_GROUP_DENY'))))) {
                     // 禁止直接访问分组
                     exit();
                 }
@@ -382,22 +382,22 @@ class App {
         }
 
         /* 载入分组配置 */
-        Config::load(APP_PATH . $this->app_name . '/config/');
+        Config::getInstance()->load(APP_PATH . $this->app_name . '/config/');
 
         // URL后缀
         $_ext = strtolower(pathinfo($_SERVER['PATH_INFO'], PATHINFO_EXTENSION));
 
         // 去除URL后缀
-        $_SERVER['PATH_INFO'] = preg_replace(Config::get('URL_HTML_SUFFIX') ? '/\.(' . trim(Config::get('URL_HTML_SUFFIX'), '.') . ')$/i' : '/\.' . $_ext . '$/i', '', $_SERVER['PATH_INFO']);
+        $_SERVER['PATH_INFO'] = preg_replace(Config::getInstance()->get('URL_HTML_SUFFIX') ? '/\.(' . trim(Config::getInstance()->get('URL_HTML_SUFFIX'), '.') . ')$/i' : '/\.' . $_ext . '$/i', '', $_SERVER['PATH_INFO']);
 
         // 检测路由规则 如果没有则按默认规则调度URL
         if (!Route::routerCheck()) {
             /* 默认规则调度URL */
             $paths = explode('/', trim($_SERVER['PATH_INFO'], '/'));
             $var = [];
-            if (Config::get('APP_GROUP_LIST') && !isset($_GET['app'])) {
-                $var['app'] = in_array(strtolower($paths[0]), explode(',', Config::get('APP_GROUP_LIST'))) ? strtolower(array_shift($paths)) : 'www';
-                if (Config::get('APP_GROUP_DENY') && in_array($var['app'], explode(',', Config::get('APP_GROUP_DENY')))) {
+            if (Config::getInstance()->get('APP_GROUP_LIST') && !isset($_GET['app'])) {
+                $var['app'] = in_array(strtolower($paths[0]), explode(',', Config::getInstance()->get('APP_GROUP_LIST'))) ? strtolower(array_shift($paths)) : 'www';
+                if (Config::getInstance()->get('APP_GROUP_DENY') && in_array($var['app'], explode(',', Config::getInstance()->get('APP_GROUP_DENY')))) {
                     // 禁止直接访问分组
                     exit();
                 }

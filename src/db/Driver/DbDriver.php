@@ -55,7 +55,7 @@ abstract class DbDriver {
      */
 
     public function __construct($db = '') {
-        $this->db_config = Config::get('database.' . $db);
+        $this->db_config = Config::getInstance()->get('database.' . $db);
     }
 
     /**

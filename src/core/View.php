@@ -12,7 +12,7 @@ class View {
 
     public function fetch($tpl, $dir = null) {
         if (null === $dir) {
-            $dir = Config::get('template_dir');
+            $dir = Config::getInstance()->get('template_dir');
         }
         if ($dir) {
             $dir = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR;

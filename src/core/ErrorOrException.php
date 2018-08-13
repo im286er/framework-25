@@ -147,7 +147,7 @@ class ErrorOrException {
             return;
         }
 
-        $templates_path = Config::get('error_views_path');
+        $templates_path = Config::getInstance()->get('error_views_path');
 
         if (empty($templates_path)) {
             $templates_path = __DIR__ . '/../tpl/errors/';
@@ -177,7 +177,7 @@ class ErrorOrException {
      * @return type
      */
     public static function show_exception($exception) {
-        $templates_path = Config::get('error_views_path');
+        $templates_path = Config::getInstance()->get('error_views_path');
 
         if (empty($templates_path)) {
             $templates_path = __DIR__ . '/../tpl/errors/';
@@ -203,7 +203,7 @@ class ErrorOrException {
      * php 错误 web 展示
      */
     public static function show_php_error($message, $filepath, $line) {
-        $templates_path = Config::get('error_views_path');
+        $templates_path = Config::getInstance()->get('error_views_path');
 
         if (empty($templates_path)) {
             $templates_path = __DIR__ . '/../tpl/errors/';

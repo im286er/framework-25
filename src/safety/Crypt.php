@@ -14,7 +14,7 @@ class Crypt {
      * @return string
      */
     public static function encrypt($data, $key = '', $expire = 0) {
-        $key = empty($key) ? Config::get('auth_key') : $key;
+        $key = empty($key) ? Config::getInstance()->get('auth_key') : $key;
         $expire = sprintf('%010d', $expire ? $expire + time() : 0);
         $key = md5($key);
         $data = base64_encode($expire . $data);
@@ -44,7 +44,7 @@ class Crypt {
      * @return string
      */
     public static function decrypt($data, $key = '') {
-        $key = empty($key) ? Config::get('auth_key') : $key;
+        $key = empty($key) ? Config::getInstance()->get('auth_key') : $key;
         $key = md5($key);
         $data = str_replace(array('-', '_'), array('+', '/'), $data);
         $mod4 = strlen($data) % 4;

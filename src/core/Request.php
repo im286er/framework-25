@@ -632,7 +632,7 @@ class Request {
      */
     public function path() {
         if (is_null($this->path)) {
-            $suffix = Config::get('url_html_suffix');
+            $suffix = Config::getInstance()->get('url_html_suffix');
             $pathinfo = $this->pathinfo();
             if (false === $suffix) {
                 // 禁止伪静态访问
@@ -1408,7 +1408,7 @@ class Request {
     public function ip($type = 0, $adv = true) {
         $type = $type ? 1 : 0;
 
-        $httpAgentIp = Config::get('http_agent_ip');
+        $httpAgentIp = Config::getInstance()->get('http_agent_ip');
 
         if ($httpAgentIp && isset($_SERVER[$httpAgentIp])) {
             $ip = $_SERVER[$httpAgentIp];
