@@ -317,6 +317,57 @@ class Redis {
     }
 
     /**
+     * 获取字符串内指定位置的位值(BIT).
+     * @param type $k           key
+     * @param type $offset      位偏移
+     * @return int      返回位值(0 或 1), 如果 key 不存在或者偏移超过活字符串长度范围, 返回 0.
+     */
+    public function getbit($k, $offset) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($k)->getbit($k, $offset);
+        }
+        return 0;
+    }
+
+    /**
+     * 设置字符串内指定位置的位值(BIT), 字符串的长度会自动扩展.
+     * @param type $k           key
+     * @param type $offset      位偏移, 取值范围 [0, 1073741824]
+     * @param type $val          0 或 1
+     * @return int      返回原来的位值. 如果 val 不是 0 或者 1, 返回 false.
+     */
+    public function setbit($k, $offset, $val) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($k)->setbit($k, $offset, $val);
+        }
+        return 0;
+    }
+
+    /**
+     * 计算字符串的子串所包含的位值为 1 的个数.
+     * @param type $k           key
+     * @return int              返回位值为 1 的个数. 出错返回 false.
+     */
+    public function bitcount($k) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($k)->bitcount($k);
+        }
+        return 0;
+    }
+
+    /**
+     * 计算字符串的长度(字节数).
+     * @param type $k
+     * @return int      返回字符串的长度, key 不存在则返回 0.
+     */
+    public function strlen($k) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($k)->strlen($k);
+        }
+        return 0;
+    }
+
+    /**
      * 对指定键名设置锁标记（此锁并不对键值做修改限制,仅为键名的锁标记）;
      * 此方法可用于防止惊群现象发生,在get方法获取键值无效时,先判断键名是否有锁标记,
      * 如果已加锁,则不获取新值;
@@ -825,69 +876,6 @@ class Redis {
     public function zrrange($name, $offset, $limit) {
         if ($this->is_available()) {
             return $this->_getConForKey($name)->zRevRange($name, $offset, $limit, true);
-        }
-        return false;
-    }
-
-    /**
-     * 删除 zset 中的所有 key.
-     * 参数
-     *      name - zset 的名字.
-     * 返回值
-     *      如果出错则返回 false, 否则返回删除的 key 的数量.
-     */
-    public function zclear($name) {
-        if ($this->is_available()) {
-            return $this->_getConForKey($name)->delete($name);
-        }
-        return false;
-    }
-
-    /**
-     *
-     * 返回处于区间 [start,end] key 数量.
-     * 参数
-     *       name - zset 的名字.
-     *       score_start - key 的最小权重值(包含), 空字符串表示 -inf.
-     *       score_end - key 的最大权重值(包含), 空字符串表示 +inf.
-     * 返回值
-     *       如果出错则返回 false, 否则返回符合条件的 key 的数量.
-     */
-    public function zcount($name, $score_start, $score_end) {
-        if ($this->is_available()) {
-            return $this->_getConForKey($name)->zCount($name, $score_start, $score_end);
-        }
-        return false;
-    }
-
-    /**
-     * 获取状态
-     * @return type
-     */
-    public function get_stats() {
-        $data = [];
-        foreach ($this->link as $key => $value) {
-            $data[$key] = $this->link[$key]->info();
-        }
-        return $data;
-    }
-
-    /**
-     * 最好能保证它能最后析构!
-     * 关闭连接
-     */
-    public function __destruct() {
-        if (!empty($this->link)) {
-            foreach ($this->link as $key => $value) {
-                unset($this->link[$key]);
-            }
-        }
-        unset($this->link);
-        unset($this->isConnected);
-    }
-
-}
->zRevRange($name, $offset, $limit, true);
         }
         return false;
     }

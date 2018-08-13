@@ -284,6 +284,59 @@ class ssdbService {
     }
 
     /**
+     * 获取字符串内指定位置的位值(BIT).
+     * @param type $k           key
+     * @param type $offset      位偏移
+     * @return int      返回位值(0 或 1), 如果 key 不存在或者偏移超过活字符串长度范围, 返回 0.
+     */
+    public function getbit($k, $offset) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($k)->getbit($k, $offset);
+        }
+        return 0;
+    }
+
+    /**
+     * 设置字符串内指定位置的位值(BIT), 字符串的长度会自动扩展.
+     * @param type $k           key
+     * @param type $offset      位偏移, 取值范围 [0, 1073741824]
+     * @param type $val          0 或 1
+     * @return int      返回原来的位值. 如果 val 不是 0 或者 1, 返回 false.
+     */
+    public function setbit($k, $offset, $val) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($k)->getbit($k, $offset);
+        }
+        return 0;
+    }
+
+    /**
+     * 计算字符串的子串所包含的位值为 1 的个数. 若 start 是负数, 则从字符串末尾算起. 若 end 是负数, 则表示从字符串末尾算起(包含). 类似 Redis 的 bitcount
+     * @param type $k           key
+     * @param type $start       可选, 子串的字节偏移
+     * @param type $end         可选
+     * @return int              返回位值为 1 的个数. 出错返回 false.
+     */
+    public function bitcount($k, $start = 0, $end = -1) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($k)->bitcount($k, $start, $end);
+        }
+        return 0;
+    }
+
+    /**
+     * 计算字符串的长度(字节数).
+     * @param type $k
+     * @return int      返回字符串的长度, key 不存在则返回 0.
+     */
+    public function strlen($k) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($k)->strlen($k);
+        }
+        return 0;
+    }
+
+    /**
      * 列出处于区间 (key_start, key_end] 的 key 列表.
      * ("", ""] 表示整个区间.
      * 参数
@@ -1213,82 +1266,6 @@ class ssdbService {
             return $this->_getConForKey($name)->qtrim_back($name, $size);
         }
         return false;
-    }
-
-    /**
-     * 清理 zhash
-     * @param type $zname
-     * @return boolean
-     */
-    public function multi_zscan_del($zname) {
-        $key_start = '';
-        $score_start = '';
-        while (1) {
-            $items = $this->_getConForKey($zname)->zscan($zname, $key_start, $score_start, '', 100);
-            if (!$items) {
-                break;
-            }
-            foreach ($items as $key => $score) {
-                $key_start = $key;
-                $score_start = $score;
-
-                $this->_getConForKey($zname)->zdel($zname, $key);
-            }
-        }
-        return true;
-    }
-
-    /**
-     * 清理 hash
-     * @param type $hname
-     * @return boolean
-     */
-    public function multi_hscan_del($hname) {
-        if ($this->is_available()) {
-            $key_start = '';
-            while (1) {
-                $items = $this->_getConForKey($hname)->hscan($hname, $key_start, '', 100);
-                if (!$items) {
-                    break;
-                }
-                foreach ($items as $key => $score) {
-                    $key_start = $key;
-                    $this->_getConForKey($hname)->hdel($hname, $key);
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * 最好能保证它能最后析构!
-     * 关闭连接
-     */
-    public function __destruct() {
-        foreach ($this->link as $key => $value) {
-            $this->link[$key]->close();
-        }
-        unset($this->link);
-        unset($this->isConnected);
-    }
-
-    /**
-     * 　单实例化
-     * @staticvar array $obj
-     * @param type $conf_name
-     * @return \self
-     */
-    public static function getInstance($conf_name = 'ssdb_cache') {
-        static $obj = [];
-        if (!isset($obj[$conf_name])) {
-            $obj[$conf_name] = new self($conf_name);
-        }
-        return $obj[$conf_name];
-    }
-
-}
-eturn false;
     }
 
     /**
