@@ -1288,3 +1288,79 @@ class ssdbService {
     }
 
 }
+eturn false;
+    }
+
+    /**
+     * 清理 zhash
+     * @param type $zname
+     * @return boolean
+     */
+    public function multi_zscan_del($zname) {
+        $key_start = '';
+        $score_start = '';
+        while (1) {
+            $items = $this->_getConForKey($zname)->zscan($zname, $key_start, $score_start, '', 100);
+            if (!$items) {
+                break;
+            }
+            foreach ($items as $key => $score) {
+                $key_start = $key;
+                $score_start = $score;
+
+                $this->_getConForKey($zname)->zdel($zname, $key);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 清理 hash
+     * @param type $hname
+     * @return boolean
+     */
+    public function multi_hscan_del($hname) {
+        if ($this->is_available()) {
+            $key_start = '';
+            while (1) {
+                $items = $this->_getConForKey($hname)->hscan($hname, $key_start, '', 100);
+                if (!$items) {
+                    break;
+                }
+                foreach ($items as $key => $score) {
+                    $key_start = $key;
+                    $this->_getConForKey($hname)->hdel($hname, $key);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 最好能保证它能最后析构!
+     * 关闭连接
+     */
+    public function __destruct() {
+        foreach ($this->link as $key => $value) {
+            $this->link[$key]->close();
+        }
+        unset($this->link);
+        unset($this->isConnected);
+    }
+
+    /**
+     * 　单实例化
+     * @staticvar array $obj
+     * @param type $conf_name
+     * @return \self
+     */
+    public static function getInstance($conf_name = 'ssdb_cache') {
+        static $obj = [];
+        if (!isset($obj[$conf_name])) {
+            $obj[$conf_name] = new self($conf_name);
+        }
+        return $obj[$conf_name];
+    }
+
+}

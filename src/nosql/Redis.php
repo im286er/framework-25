@@ -887,3 +887,66 @@ class Redis {
     }
 
 }
+>zRevRange($name, $offset, $limit, true);
+        }
+        return false;
+    }
+
+    /**
+     * 删除 zset 中的所有 key.
+     * 参数
+     *      name - zset 的名字.
+     * 返回值
+     *      如果出错则返回 false, 否则返回删除的 key 的数量.
+     */
+    public function zclear($name) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->delete($name);
+        }
+        return false;
+    }
+
+    /**
+     *
+     * 返回处于区间 [start,end] key 数量.
+     * 参数
+     *       name - zset 的名字.
+     *       score_start - key 的最小权重值(包含), 空字符串表示 -inf.
+     *       score_end - key 的最大权重值(包含), 空字符串表示 +inf.
+     * 返回值
+     *       如果出错则返回 false, 否则返回符合条件的 key 的数量.
+     */
+    public function zcount($name, $score_start, $score_end) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zCount($name, $score_start, $score_end);
+        }
+        return false;
+    }
+
+    /**
+     * 获取状态
+     * @return type
+     */
+    public function get_stats() {
+        $data = [];
+        foreach ($this->link as $key => $value) {
+            $data[$key] = $this->link[$key]->info();
+        }
+        return $data;
+    }
+
+    /**
+     * 最好能保证它能最后析构!
+     * 关闭连接
+     */
+    public function __destruct() {
+        if (!empty($this->link)) {
+            foreach ($this->link as $key => $value) {
+                unset($this->link[$key]);
+            }
+        }
+        unset($this->link);
+        unset($this->isConnected);
+    }
+
+}
