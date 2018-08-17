@@ -117,7 +117,7 @@ class ssdbService {
         $expire = intval($now / $period) * $period + $period;
         $ttl = $expire - $now;
         $key = "act_limit_" . md5("{$uid}_{$action}");
-        $count = $this->incr($key, 1);
+        $count = $this->_getConForKey($key)->incr($key, 1);
         $this->expire($key, $ttl);
         if ($count === false || $count > $max_count) {
             return false;
