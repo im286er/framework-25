@@ -154,6 +154,11 @@ class Cache {
             $ver = ssdbService::getInstance()->zincr('cache_ver', $key, 1);
             $this->ver = intval($ver);
 
+            /* 最大版本号修正 */
+            if ($this->ver == PHP_INT_MAX) {
+                ssdbService::getInstance()->zset('cache_ver', $key, 1);
+            }
+
             /* 写入 memcached 新版本号 */
             try {
                 $this->link->set($key, $this->ver);
