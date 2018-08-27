@@ -1408,10 +1408,8 @@ class Request {
     public function ip($type = 0, $adv = true) {
         $type = $type ? 1 : 0;
 
-        $httpAgentIp = Config::getInstance()->get('http_agent_ip');
-
-        if ($httpAgentIp && isset($_SERVER[$httpAgentIp])) {
-            $ip = $_SERVER[$httpAgentIp];
+        if (isset($_SERVER['HTTP_X_REAL_IP'])) {
+            $ip = $_SERVER['HTTP_X_REAL_IP'];
         } elseif ($adv) {
             if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
                 $arr = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
