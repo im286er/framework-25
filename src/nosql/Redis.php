@@ -9,6 +9,9 @@ use framework\core\Exception;
  *  Redis 缓存驱动
  *
  * 要求安装phpredis扩展：https://github.com/phpredis/phpredis/
+ *
+ * https://github.com/nrk/predis
+ *
  */
 class Redis {
 
@@ -284,8 +287,9 @@ class Redis {
 
         try {
             if ($ttl == 0) {
-                // 缓存 7.5 天
-                return $this->_getConForKey($key)->setex($key, 648000, $data);
+                // 缓存 15 ~ 18 天
+                $ttl = random_int(1296000, 1555200);
+                return $this->_getConForKey($key)->setex($key, $ttl, $data);
             } else {
                 // 有时间限制
                 return $this->_getConForKey($key)->setex($key, $ttl, $data);
