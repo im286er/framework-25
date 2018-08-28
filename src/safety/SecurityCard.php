@@ -244,7 +244,7 @@ class SecurityCard {
             }
         }
         if ($is_serialize === true) {
-            return json_encode($security);
+            return json_encode($security, JSON_UNESCAPED_UNICODE);
         }
         return $security;
     }

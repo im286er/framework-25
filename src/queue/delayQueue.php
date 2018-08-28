@@ -2,7 +2,7 @@
 
 namespace framework\queue;
 
-use framework\nosql\Cache;
+use framework\nosql\Redis;
 use framework\nosql\ssdbService;
 
 /**
