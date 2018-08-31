@@ -23,7 +23,7 @@ abstract class Action {
 
     // 初始化
     function __initialize() {
-
+        
     }
 
     /**
@@ -132,24 +132,13 @@ abstract class Action {
     public function ajaxReturn($data, $type = 'JSON') {
         switch (strtoupper($type)) {
             case 'JSON' :
-                // 返回JSON数据格式到客户端 包含状态信息
-                $json = json_encode($data, JSON_UNESCAPED_UNICODE);
-                Response::getInstance()->header('Content-Type', 'application/json; charset=utf-8')->write($json)->send();
+                Response::getInstance()->json($data);
                 break;
             case 'JSONP':
-                // 返回JSON数据格式到客户端 包含状态信息
-                $callback = get('callback', '', 't');
-                $json = json_encode($data, JSON_UNESCAPED_UNICODE);
-                Response::getInstance()->header('Content-Type', 'application/javascript; charset=utf-8')->write($callback . '(' . $json . ');')->send();
-                break;
-            case 'EVAL' :
-                // 返回可执行的js脚本
-                Response::getInstance()->write($data)->send();
+                Response::getInstance()->jsonp($data);
                 break;
             default :
-                // 用于扩展其他返回格式数据
-                $json = json_encode($data, JSON_UNESCAPED_UNICODE);
-                Response::getInstance()->header('Content-Type', 'application/json; charset=utf-8')->write($json)->send();
+                Response::getInstance()->json($data);
                 break;
         }
         exit();
@@ -165,7 +154,7 @@ abstract class Action {
      */
     protected function redirect($url, $delay = 0, $msg = '') {
         if ($delay == 0) {
-            Response::getInstance()->clear()->status(302)->header('Location', $url)->write($url)->send();
+            Response::getInstance()->redirect($url, 302);
         } else {
             $this->delay_redirect($url, $delay, $msg);
         }
@@ -173,50 +162,10 @@ abstract class Action {
     }
 
     /**
-     * Stops processing and returns a given response.
-     *
-     * @param int $code HTTP status code
-     * @param string $message Response message
-     */
-    public function halt($code = 200, $message = '') {
-        Response::getInstance()->clear()->status($code)->write($message)->send();
-        exit();
-    }
-
-    /**
      * Sends an HTTP 404 response when a URL is not found.
      */
     public function not_found() {
-        \framework\core\ErrorOrException::show_404();
-    }
-
-    /**
-     * Handles ETag HTTP caching.
-     *
-     * @param string $id ETag identifier
-     * @param string $type ETag type
-     */
-    public function etag($id, $type = 'strong') {
-        $id = (($type === 'weak') ? 'W/' : '') . $id;
-
-        Response::getInstance()->header('ETag', $id);
-
-        if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && $_SERVER['HTTP_IF_NONE_MATCH'] === $id) {
-            $this->halt(304);
-        }
-    }
-
-    /**
-     * Handles last modified HTTP caching.
-     *
-     * @param int $time Unix timestamp
-     */
-    public function last_modified($time) {
-        $this->response()->header('Last-Modified', gmdate('D, d M Y H:i:s \G\M\T', $time));
-
-        if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) === $time) {
-            $this->halt(304);
-        }
+        ErrorOrException::show_404();
     }
 
     /**
@@ -248,13 +197,13 @@ abstract class Action {
         }
         // 默认操作成功自动返回操作前页面
         if (empty($url)) {
-            $this->assign("jumpUrl", $_SERVER["HTTP_REFERER"]);
+            $this->assign("jumpUrl", Request::getInstance()->get_url_source());
         } else {
             $this->assign("jumpUrl", $url);
         }
 
         $return = $this->fetch('dispatch_jump.tpl.php', __DIR__ . '/../tpl/');
-        Response::getInstance()->write($return)->send();
+        Response::getInstance()->clear()->write($return)->send();
         // 中止执行  避免出错后继续执行
         exit();
     }
@@ -297,7 +246,7 @@ abstract class Action {
             }
             // 默认操作成功自动返回操作前页面
             if (!isset($this->jumpUrl)) {
-                $this->assign("jumpUrl", $_SERVER["HTTP_REFERER"]);
+                $this->assign("jumpUrl", Request::getInstance()->get_url_source());
             }
             $return = $this->fetch('dispatch_jump.tpl.php', __DIR__ . '/../tpl/');
         } else {
@@ -313,7 +262,7 @@ abstract class Action {
 
             $return = $this->fetch('dispatch_jump.tpl.php', __DIR__ . '/../tpl/');
         }
-        Response::getInstance()->write($return)->send();
+        Response::getInstance()->clear()->write($return)->send();
         // 中止执行  避免出错后继续执行
         exit();
     }

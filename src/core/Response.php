@@ -312,12 +312,27 @@ class Response {
      * @param int     $status
      */
     public function redirect($url, $status = 302) {
-        $this->status($status);
-        $this->header('Location', $url);
-        $this->setBody('');
-        $this->sendHeaders();
-        $this->send();
-        exit();
+        $this->clear()->status($status)->header('Location', $url)->write($url)->send();
+    }
+
+    /**
+     * 发送 json 格式到浏览器
+     * @param type $data
+     */
+    public function json($data) {
+        $json = json_encode($data, JSON_UNESCAPED_UNICODE);
+        $this->clear()->contentType("application/json")->write($json)->send();
+    }
+
+    /**
+     * 发送 jsonp 格式到浏览器
+     * @param type $data
+     */
+    public function jsonp($data) {
+        $callback = Request::getInstance()->get('callback', '', 'trim');
+        $json = json_encode($data, JSON_UNESCAPED_UNICODE);
+
+        $this->clear()->contentType("application/javascript")->write($callback . '(' . $json . ');')->send();
     }
 
     /**
