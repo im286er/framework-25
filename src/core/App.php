@@ -135,6 +135,10 @@ class App {
             $this->app_name = $app;
         }
 
+        if (empty($this->app_name) && (!empty($_GET['app']))) {
+            $this->app_name = strtolower($_GET['app']);
+        }
+
         /* 载入分组配置 */
         Config::getInstance()->load(APP_PATH . $this->app_name . '/config/');
 
@@ -379,6 +383,10 @@ class App {
             }
             /* 定义分组应用 */
             $this->app_name = $app;
+        }
+
+        if (empty($this->app_name) && (!empty($_GET['app']))) {
+            $this->app_name = strtolower($_GET['app']);
         }
 
         /* 载入分组配置 */
