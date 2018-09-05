@@ -254,6 +254,52 @@ class ssdbService {
     }
 
     /**
+     * 简单设置缓存
+     * @param type $k    缓存 key
+     * @param type $v         缓存值
+     * @param type $ttl      有效期(秒)
+     * @return
+     */
+    public function simple_set($k, $v, $ttl = 0) {
+        if ($this->is_available()) {
+            if (empty($ttl)) {
+                return $this->_getConForKey($k)->set($k, $v);
+            } else {
+                return $this->_getConForKey($k)->setx($k, $v, $ttl);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 简单获取缓存
+     * @param   string  $k    缓存名称
+     * @return  boolean/value
+     */
+    public function simple_get($k) {
+        if ($this->is_available()) {
+            $v = $this->_getConForKey($k)->get($k);
+            if (empty($v)) {
+                return false;
+            }
+            return $v;
+        }
+        return false;
+    }
+
+    /**
+     * 简单删除缓存
+     * @param   string  $k      缓存名称
+     * @return  boolean
+     */
+    public function simple_delete($k) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($k)->del($k);
+        }
+        return false;
+    }
+
+    /**
      * 使 key 对应的值增加 num. 参数 num 可以为负数. 如果原来的值不是整数(字符串形式的整数), 它会被先转换成整数.
      * 参数
      *      key
