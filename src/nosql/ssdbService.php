@@ -351,7 +351,7 @@ class ssdbService {
      */
     public function setbit($k, $offset, $val) {
         if ($this->is_available()) {
-            return $this->_getConForKey($k)->getbit($k, $offset);
+            return $this->_getConForKey($k)->setbit($k, $offset, $val);
         }
         return 0;
     }
