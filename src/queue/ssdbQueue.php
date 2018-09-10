@@ -25,7 +25,7 @@ class ssdbQueue {
     protected function setValue($value) {
         if (!is_numeric($value)) {
             try {
-                $value = json_encode($value, JSON_UNESCAPED_UNICODE);
+                $value = json_encode($value);
             } catch (Exception $exc) {
                 return false;
             }

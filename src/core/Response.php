@@ -320,7 +320,7 @@ class Response {
      * @param type $data
      */
     public function json($data) {
-        $json = json_encode($data, JSON_UNESCAPED_UNICODE);
+        $json = json_encode($data);
         $this->clear()->contentType("application/json")->write($json)->send();
     }
 
@@ -330,7 +330,7 @@ class Response {
      */
     public function jsonp($data) {
         $callback = Request::getInstance()->get('callback', '', 'trim');
-        $json = json_encode($data, JSON_UNESCAPED_UNICODE);
+        $json = json_encode($data);
 
         $this->clear()->contentType("application/javascript")->write($callback . '(' . $json . ');')->send();
     }
