@@ -219,7 +219,7 @@ class ssdbService {
                 return false;
             }
             /* 自动解码 */
-            return json_decode($v, true);
+            return json_decode($v, true, JSON_BIGINT_AS_STRING, 512);
         }
         return false;
     }

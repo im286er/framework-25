@@ -25,7 +25,7 @@ class ssdbQueue {
     protected function setValue($value) {
         if (!is_numeric($value)) {
             try {
-                $value = serialize($value);
+                $value = json_encode($value);
             } catch (Exception $exc) {
                 return false;
             }
@@ -44,7 +44,7 @@ class ssdbQueue {
         }
         if (!is_numeric($value)) {
             try {
-                $value = unserialize($value);
+                $value = json_decode($value, true, JSON_BIGINT_AS_STRING, 512);
             } catch (Exception $exc) {
                 return $default;
             }

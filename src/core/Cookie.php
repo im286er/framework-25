@@ -174,7 +174,7 @@ class Cookie {
 
             if (0 === strpos($value, 'think:')) {
                 $value = substr($value, 6);
-                $value = json_decode($value, true);
+                $value = json_decode($value, true, JSON_BIGINT_AS_STRING, 512);
             }
         } else {
             $value = null;
