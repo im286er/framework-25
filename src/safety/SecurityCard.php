@@ -220,7 +220,7 @@ class SecurityCard {
 
         if ($is_bind) {
             $data = ssdbService::getInstance()->hget($this->security_card_name, $bind_user);
-            return json_decode($data, true, JSON_BIGINT_AS_STRING, 512);
+            return json_decode($data, true);
         }
 
         return false;
@@ -244,7 +244,7 @@ class SecurityCard {
             }
         }
         if ($is_serialize === true) {
-            return json_encode($security, JSON_BIGINT_AS_STRING, 512);
+            return json_encode($security);
         }
         return $security;
     }

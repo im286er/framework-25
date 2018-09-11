@@ -280,7 +280,7 @@ class App {
         $data = $this->exec();
         /* 输出 */
         if (is_object($data) || is_array($data)) {
-            $json = json_encode($data, JSON_BIGINT_AS_STRING, 512);
+            $json = json_encode($data);
             if ($json == false) {
                 Log::emerg($data);
                 throw new \Exception('服务器内部处理错误！' . json_last_error_msg(), 500);

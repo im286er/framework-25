@@ -153,7 +153,7 @@ class Redis {
     public function setValue($value) {
         if (!is_numeric($value)) {
             try {
-                $value = json_encode($value, JSON_BIGINT_AS_STRING, 512);
+                $value = json_encode($value);
             } catch (Exception $exc) {
                 return false;
             }
@@ -172,7 +172,7 @@ class Redis {
         }
         if (!is_numeric($value)) {
             try {
-                $value = json_decode($value, true, JSON_BIGINT_AS_STRING, 512);
+                $value = json_decode($value, true);
             } catch (Exception $exc) {
                 return $default;
             }

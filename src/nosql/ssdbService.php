@@ -136,7 +136,7 @@ class ssdbService {
     public function set($k, $v) {
         if ($this->is_available()) {
             /* 编码 */
-            $v = json_encode($v, JSON_BIGINT_AS_STRING, 512);
+            $v = json_encode($v);
 
             return $this->_getConForKey($k)->set($k, $v);
         }
@@ -153,7 +153,7 @@ class ssdbService {
     public function setx($k, $v, $ttl) {
         if ($this->is_available()) {
             /* 编码 */
-            $v = json_encode($v, JSON_BIGINT_AS_STRING, 512);
+            $v = json_encode($v);
 
             if (empty($ttl)) {
                 return $this->_getConForKey($k)->set($k, $v);
@@ -173,7 +173,7 @@ class ssdbService {
     public function setnx($k, $v) {
         if ($this->is_available()) {
             /* 编码 */
-            $v = json_encode($v, JSON_BIGINT_AS_STRING, 512);
+            $v = json_encode($v);
 
             return $this->_getConForKey($k)->setnx($k, $v);
         }
@@ -219,7 +219,7 @@ class ssdbService {
                 return false;
             }
             /* 自动解码 */
-            return json_decode($v, true, JSON_BIGINT_AS_STRING, 512);
+            return json_decode($v, true);
         }
         return false;
     }
