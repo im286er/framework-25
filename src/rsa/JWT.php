@@ -261,7 +261,7 @@ class JWT {
      * @return boolean
      */
     public function jsonEncode($input) {
-        $json = json_encode($input);
+        $json = json_encode($input, JSON_BIGINT_AS_STRING, 512);
         if (function_exists('json_last_error') && $errno = json_last_error()) {
             $this->handleJsonError($errno);
         } elseif ($json === 'null' && $input !== null) {

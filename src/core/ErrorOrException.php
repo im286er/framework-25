@@ -64,7 +64,7 @@ class ErrorOrException {
 
                 if ((Request::getInstance()->isAjax() == true) || Request::getInstance()->isCli() == true) {
                     $json = ['ret' => 500, 'data' => null, 'msg' => $msg];
-                    Response::getInstance()->clear()->contentType('application/json')->write(json_encode($json))->send();
+                    Response::getInstance()->json($json);
                 } else {
                     /* Web　显示 */
                     self::show_php_error($msg, $errfile, $errline);
@@ -103,7 +103,7 @@ class ErrorOrException {
 
         if ((Request::getInstance()->isAjax() == true) || Request::getInstance()->isCli() == true) {
             $json = ['ret' => $exception->getCode(), 'data' => null, 'msg' => $exception->getMessage()];
-            Response::getInstance()->clear()->contentType('application/json')->write(json_encode($json))->send();
+            Response::getInstance()->json($json);
         } else {
             /* Web　显示 */
             self::show_exception($exception);
@@ -143,7 +143,7 @@ class ErrorOrException {
                 'data' => null,
                 'msg' => $message
             ];
-            Response::getInstance()->clear()->contentType('application/json')->write(json_encode($json))->send();
+            Response::getInstance()->json($json);
             return;
         }
 

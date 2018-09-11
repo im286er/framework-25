@@ -99,7 +99,7 @@ class Cookie {
 
         // 设置cookie
         if (is_array($value)) {
-            $value = 'think:' . json_encode($value);
+            $value = 'think:' . json_encode($value, JSON_BIGINT_AS_STRING, 512);
         }
 
         $expire = !empty($config['expire']) ? $_SERVER['REQUEST_TIME'] + intval($config['expire']) : 0;
