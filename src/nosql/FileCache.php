@@ -13,6 +13,8 @@ class FileCache {
     private $prefix = 'guipin_';
     private $ver = 0;
     private $cache_path = ROOT_PATH . 'cache/';
+    //文件句柄
+    private $lock_fp = [];
 
     /**
      * 架构函数
@@ -332,6 +334,41 @@ class FileCache {
         }
 
         return true;
+    }
+
+    /**
+     * 对指定键名设置锁标记（此锁并不对键值做修改限制,仅为键名的锁标记）;
+     * 此方法可用于防止惊群现象发生,在get方法获取键值无效时,先判断键名是否有锁标记,
+     * 如果已加锁,则不获取新值;
+     * 如果未加锁,则先设置锁，若设置失败说明锁已存在，若设置成功则获取新值,设置新的缓存
+     * @param string $cache_id   键名
+     * @return boolean      是否成功
+     */
+    public function lock($cache_id) {
+        $key = "lock_{$cache_id}";
+
+        $this->lock_fp[$key] = fopen($this->cache_path . $key, 'w+');
+        if ($this->lock_fp[$key] === false) {
+            return false;
+        }
+        return flock($this->lock_fp[$key], LOCK_EX);
+    }
+
+    /**
+     * 对指定键名移除锁标记
+     * @param string $cache_id      键名
+     * @return boolean              是否成功
+     */
+    public function unlock($cache_id) {
+        $key = "lock_{$cache_id}";
+
+        if (isset($this->lock_fp[$key]) && $this->lock_fp[$key] !== false) {
+            flock($this->lock_fp[$key], LOCK_UN);
+            clearstatcache();
+        }
+        //进行关闭
+        fclose($this->lock_fp[$key]);
+        return $this->unlink($this->cache_path . $key);
     }
 
     /**
