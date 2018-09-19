@@ -169,7 +169,7 @@ class delayQueue {
 
         /* 获取数据 */
         $score_end = time();
-        $size = ($size > 100 && $size <= 0) ? 100 : $size;
+        $size = ($size > 1000 && $size <= 0) ? 1000 : $size;
         $items = ssdbService::getInstance()->zscan($zname, '', 1, $score_end, $size);
         if ($items) {
             foreach ($items as $id => $time) {
@@ -183,6 +183,9 @@ class delayQueue {
                 }
                 /* 存入正式队列 */
                 $data = $this->getValue($value);
+                if (empty($data)) {
+                    continue;
+                }
                 RedisQueue::getInstance()->qpush($queue_name, $data);
             }
         }
