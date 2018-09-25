@@ -289,10 +289,10 @@ class delayQueue {
         $list = [];
 
         if ($items) {
-            foreach ($items as $name => $size) {
+            foreach ($items as $name => $score) {
                 $list[] = [
                     'name' => $name,
-                    'total' => $size,
+                    'total' => $score,
                 ];
             }
             $data['list'] = $list;
