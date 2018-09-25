@@ -2,7 +2,7 @@
 
 namespace framework\queue;
 
-use framework\nosql\Redis;
+use framework\nosql\Cache;
 use framework\nosql\ssdbService;
 
 /**
@@ -102,7 +102,7 @@ class delayQueue {
         }
 
         /* 加锁 */
-        $rs = Redis::getInstance()->lock($zname, 60);
+        $rs = Cache::getInstance()->lock($zname, 10);
         if ($rs == false) {
             /* 加锁失败 */
             return false;
@@ -136,7 +136,7 @@ class delayQueue {
         ssdbService::getInstance()->zset('delay_queue', $queue_name, $total);
 
         /* 解锁 */
-        Redis::getInstance()->unlock($zname);
+        Cache::getInstance()->unlock($zname);
 
         /* 返回 */
         if (empty($return_data)) {
@@ -162,7 +162,7 @@ class delayQueue {
         }
 
         /* 加锁 */
-        $rs = Redis::getInstance()->lock($zname, 60);
+        $rs = Cache::getInstance()->lock($zname, 60);
         if ($rs == false) {
             /* 加锁失败 */
             return false;
@@ -197,7 +197,7 @@ class delayQueue {
         ssdbService::getInstance()->zset('delay_queue', $queue_name, $total);
 
         /* 解锁 */
-        Redis::getInstance()->unlock($zname);
+        Cache::getInstance()->unlock($zname);
 
         /* 返回 */
         return true;
