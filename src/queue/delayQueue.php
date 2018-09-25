@@ -111,8 +111,9 @@ class delayQueue {
         $return_data = [];
         /* 获取数据 */
         $score_end = time();
+        $score_start = $score_end - 365 * 24 * 3600;
         $size = ($size > 1000 && $size <= 0) ? 1000 : $size;
-        $items = ssdbService::getInstance()->zscan($zname, '', 1, $score_end, $size);
+        $items = ssdbService::getInstance()->zscan($zname, '', $score_start, $score_end, $size);
         if ($items) {
             foreach ($items as $id => $time) {
                 /* 组合数据 */
@@ -169,8 +170,9 @@ class delayQueue {
 
         /* 获取数据 */
         $score_end = time();
+        $score_start = $score_end - 365 * 24 * 3600;
         $size = ($size > 1000 && $size <= 0) ? 1000 : $size;
-        $items = ssdbService::getInstance()->zscan($zname, '', 1, $score_end, $size);
+        $items = ssdbService::getInstance()->zscan($zname, '', $score_start, $score_end, $size);
         if ($items) {
             foreach ($items as $id => $time) {
                 /* 组合数据 */
