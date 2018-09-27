@@ -23,7 +23,7 @@ abstract class Action {
 
     // 初始化
     function __initialize() {
-        
+
     }
 
     /**
@@ -240,23 +240,19 @@ abstract class Action {
         $this->assign('status', $status);   // 状态
         if ($status) { //发送成功信息
             $this->assign('message', $message); // 提示信息
-            // 成功操作后默认停留1秒
-            if (!isset($this->waitSecond)) {
-                $this->assign('waitSecond', 1);
-            }
+            // 成功操作后默认停留3秒
+            $this->assign('waitSecond', 3);
             // 默认操作成功自动返回操作前页面
-            if (!isset($this->jumpUrl)) {
+            if (empty($jumpUrl)) {
                 $this->assign("jumpUrl", Request::getInstance()->get_url_source());
             }
             $return = $this->fetch('dispatch_jump.tpl.php', __DIR__ . '/../tpl/');
         } else {
             $this->assign('error', $message); // 提示信息
             //发生错误时候默认停留3秒
-            if (!isset($this->waitSecond)) {
-                $this->assign('waitSecond', 3);
-            }
+            $this->assign('waitSecond', 3);
             // 默认发生错误的话自动返回上页
-            if (!isset($this->jumpUrl)) {
+            if (empty($jumpUrl)) {
                 $this->assign('jumpUrl', "javascript:history.back(-1);");
             }
 
