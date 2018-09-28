@@ -88,12 +88,11 @@ class MYSQLModel {
      * @return \self
      */
     public static function getInstance($name = '', $connection = 'mysql') {
-        $key = md5("{$connection}-{$name}");
         static $obj = [];
-        if (!isset($obj[$key])) {
-            $obj[$key] = new self($name, $connection);
+        if (!isset($obj[$connection])) {
+            $obj[$connection] = new self($name, $connection);
         }
-        return $obj[$key];
+        return $obj[$connection];
     }
 
     /**
