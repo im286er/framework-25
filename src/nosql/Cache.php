@@ -252,7 +252,7 @@ class Cache {
         $key = "lock_{$cache_id}";
 
         try {
-            return $this->link->add($key, '1', 0, $ttl);
+            return $this->link->add($key, 1, false, $ttl);
         } catch (\Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
