@@ -680,22 +680,31 @@ abstract class DbDriver {
      * @return string
      */
     protected function parseOrder($order) {
+        if (empty($order)) {
+            return '';
+        }
+        $array = array();
+        if (is_string($order) && '[RAND]' != $order) {
+            $order = explode(',', $order);
+        }
         if (is_array($order)) {
-            $array = [];
             foreach ($order as $key => $val) {
                 if (is_numeric($key)) {
-                    if (false === strpos($val, '(')) {
-                        $array[] = $this->parseKey($val);
-                    } elseif ('[rand]' == $val) {
-                        $array[] = $this->parseRand();
-                    }
+                    list($key, $sort) = explode(' ', strpos($val, ' ') ? $val : $val . ' ');
                 } else {
-                    $sort = in_array(strtolower(trim($val)), ['asc', 'desc']) ? ' ' . $val : '';
-                    $array[] = $this->parseKey($key) . ' ' . $sort;
+                    $sort = $val;
+                }
+                if (preg_match('/^[\w\.]+$/', $key)) {
+                    $sort = strtoupper($sort);
+                    $sort = in_array($sort, ['ASC', 'DESC'], true) ? ' ' . $sort : '';
+                    $array[] = $this->parseKey($key, true) . $sort;
                 }
             }
-            $order = implode(',', $array);
+        } elseif ('[RAND]' == $order) {
+            // 随机排序
+            $array[] = $this->parseRand();
         }
+        $order = implode(',', $array);
         return !empty($order) ? ' ORDER BY ' . $order : '';
     }
 
