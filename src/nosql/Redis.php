@@ -840,7 +840,7 @@ class Redis {
      */
     public function zincr($name, $k, $v) {
         if ($this->is_available()) {
-            return $this->_getConForKey($name)->zIncrBy($name, $k, $v);
+            return $this->_getConForKey($name)->zIncrBy($name, $v, $k);
         }
         return false;
     }
