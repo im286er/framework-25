@@ -23,7 +23,7 @@ class memcacheDriver extends \SessionHandler {
         if (empty($session_id)) {
             return '';
         }
-        return Cache::getInstance()->simple_get($session_id);
+        return (string) Cache::getInstance()->simple_get($session_id);
     }
 
     public function write($session_id, $session_data) {
