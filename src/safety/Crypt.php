@@ -7,10 +7,10 @@ use framework\core\Config;
 class Crypt {
 
     /**
-     * 加密字符串
-     * @param string $str 字符串
-     * @param string $key 加密key
-     * @param integer $expire 有效期（秒）
+     * 对称加密字符串
+     * @param   string      $data       字符串          Y
+     * @param   string      $key        加密key         N
+     * @param   integer     $expire     有效期（秒）    N
      * @return string
      */
     public static function encrypt($data, $key = '', $expire = 0) {
@@ -38,10 +38,10 @@ class Crypt {
     }
 
     /**
-     * 解密字符串
-     * @param string $str 字符串
-     * @param string $key 加密key
-     * @return string
+     * 对称解密字符串
+     * @param   string      $data       字符串          Y
+     * @param   string      $key        加密key         N
+     * @return  string
      */
     public static function decrypt($data, $key = '') {
         $key = empty($key) ? Config::getInstance()->get('auth_key') : $key;

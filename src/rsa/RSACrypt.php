@@ -5,7 +5,7 @@ namespace framework\rsa;
 use framework\core\Config;
 
 /**
- * RSA加解密类
+ *  RSA加解密类
  * “参数签名”用私钥加密，“验证签名”用公钥解密
  * “内容加密”用公钥加密，“内容解密”用私钥解密
  */
