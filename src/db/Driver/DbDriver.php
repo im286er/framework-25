@@ -694,7 +694,7 @@ abstract class DbDriver {
                         /* 去掉两格以上的空格   */
                         $val = trim($val);
                         $val = preg_replace('#\s{2,}#', ' ', $val);
-                        list($key, $sort) = array_map('trim', explode(' ', $val));
+                        list($key, $sort) = explode(' ', $val);
                     } else {
                         $key = $val;
                         $sort = '';
