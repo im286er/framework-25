@@ -690,7 +690,15 @@ abstract class DbDriver {
         if (is_array($order)) {
             foreach ($order as $key => $val) {
                 if (is_numeric($key)) {
-                    list($key, $sort) = explode(' ', strpos($val, ' ') ? $val : $val . ' ');
+                    if (strpos($val, ' ') !== false) {
+                        /* 去掉两格以上的空格   */
+                        $val = trim($val);
+                        $val = preg_replace('#\s{2,}#', ' ', $val);
+                        list($key, $sort) = array_map('trim', explode(' ', $val));
+                    } else {
+                        $key = $val;
+                        $sort = '';
+                    }
                 } else {
                     $sort = $val;
                 }
