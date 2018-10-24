@@ -62,7 +62,7 @@ class delayQueue {
      */
     public function qpush($queue_name = 'queue_task', $data = [], $ttl = 300) {
         if (empty($queue_name)) {
-            return false;
+            throw new \LengthException('队列名称不能为空', 410);
         }
 
         $zname = "delay_queue_{$queue_name}";
@@ -96,7 +96,7 @@ class delayQueue {
      */
     public function qpop($queue_name = 'queue_task', $size = 1) {
         if (empty($queue_name)) {
-            return false;
+            throw new \LengthException('队列名称不能为空', 410);
         }
 
         /* 检查积压数量 */
@@ -159,7 +159,7 @@ class delayQueue {
      */
     public function move_to_queue($queue_name = 'queue_task', $size = 1) {
         if (empty($queue_name)) {
-            return false;
+            throw new \LengthException('队列名称不能为空', 410);
         }
 
         /* 检查积压数量 */
@@ -219,7 +219,11 @@ class delayQueue {
      * @return boolean
      */
     public function delete($queue_name = 'queue_task', $ids = []) {
-        if (empty($queue_name) || empty($ids)) {
+        if (empty($queue_name)) {
+            throw new \LengthException('队列名称不能为空', 410);
+        }
+
+        if (empty($ids)) {
             return false;
         }
 
@@ -316,7 +320,7 @@ class delayQueue {
      */
     public function size($queue_name = 'queue_task') {
         if (empty($queue_name)) {
-            return 0;
+            throw new \LengthException('队列名称不能为空', 410);
         }
 
         $zname = "delay_queue_{$queue_name}";
