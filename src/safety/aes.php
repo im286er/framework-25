@@ -33,30 +33,40 @@ class aes {
     /**
      * 对称加密字符串
      * @param   string      $data       原始字符串          Y
+     * @param   integer     $expire     有效期（秒）    N
      * @return string       加密过的字符串
      */
-    public function encrypt($data) {
+    public function encrypt($data, $expire = 0) {
         $aes = new \PhpAes\Aes($this->z, $this->mod, $this->iv);
 
-        $str = $aes->encrypt($data);
+        $expire = sprintf('%010d', $expire ? $expire + time() : 0);
+
+        $str = $aes->encrypt($expire . $data);
+
         return str_replace(array('+', '/', '='), array('-', '_', ''), base64_encode($str));
     }
 
     /**
      * 对称解密字符串
-     * @param   string      $data       加密过的字符串          Y
+     * @param   string      $str       加密过的字符串          Y
      * @return  string
      */
-    public function decrypt($data) {
-        $data = str_replace(array('-', '_'), array('+', '/'), $data);
-        $mod4 = strlen($data) % 4;
+    public function decrypt($str) {
+        $str = str_replace(array('-', '_'), array('+', '/'), $str);
+        $mod4 = strlen($str) % 4;
         if ($mod4) {
-            $data .= substr('====', $mod4);
+            $str .= substr('====', $mod4);
         }
-        $data = base64_decode($data);
+        $str = base64_decode($str);
 
         $aes = new \PhpAes\Aes($this->z, $this->mod, $this->iv);
-        return $aes->decrypt($data);
+        $data = $aes->decrypt($str);
+
+        $expire = substr($data, 0, 10);
+        if ($expire > 0 && $expire < time()) {
+            return '';
+        }
+        return substr($data, 10);
     }
 
 }
