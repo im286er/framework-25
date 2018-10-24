@@ -61,6 +61,9 @@ class delayQueue {
      * @return  int         $id             队列编号
      */
     public function qpush($queue_name = 'queue_task', $data = [], $ttl = 300) {
+        if (empty($queue_name)) {
+            return false;
+        }
 
         $zname = "delay_queue_{$queue_name}";
         $hname = "delay_queue_{$queue_name}";
@@ -92,6 +95,9 @@ class delayQueue {
      * @return boolean/array
      */
     public function qpop($queue_name = 'queue_task', $size = 1) {
+        if (empty($queue_name)) {
+            return false;
+        }
 
         /* 检查积压数量 */
         $zname = "delay_queue_{$queue_name}";
@@ -152,6 +158,9 @@ class delayQueue {
      * @return boolean/array
      */
     public function move_to_queue($queue_name = 'queue_task', $size = 1) {
+        if (empty($queue_name)) {
+            return false;
+        }
 
         /* 检查积压数量 */
         $zname = "delay_queue_{$queue_name}";
@@ -306,6 +315,10 @@ class delayQueue {
      * @return int
      */
     public function size($queue_name = 'queue_task') {
+        if (empty($queue_name)) {
+            return 0;
+        }
+
         $zname = "delay_queue_{$queue_name}";
         $total = ssdbService::getInstance()->zsize($zname);
         if (empty($total)) {

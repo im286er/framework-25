@@ -53,6 +53,9 @@ class ssdbQueue {
     }
 
     protected function getQueueKey($queue_name) {
+        if (empty($queue_name)) {
+            throw new \LengthException('队列名称不能为空', 410);
+        }
         return 'queue_' . $queue_name;
     }
 
