@@ -99,7 +99,7 @@ class ssdbService {
      * @param \Exception $ex
      */
     public function exception($ex) {
-        Log::write($ex, Log::EMERG);
+        Log::emerg($ex);
         throw new \Exception($ex);
     }
 

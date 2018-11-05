@@ -5,6 +5,8 @@ namespace framework\nosql;
 /**
  * A simple consistent hashing implementation with pluggable hash algorithms.
  *
+ *  一致性hash	https://github.com/pda/flexihash
+ * 
  * @author Paul Annesley
  * @license http://www.opensource.org/licenses/mit-license.php
  */

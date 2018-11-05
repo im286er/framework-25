@@ -5,6 +5,7 @@ namespace framework\safety;
 use framework\core\Config;
 
 /**
+ *  aes 加解密    des的升级版  https://github.com/phillipsdata/phpaes
  *  高级加密标准（英语：Advanced Encryption Standard，缩写：AES），在密码学中又称Rijndael加密法，是美国联邦政府采用的一种区块加密标准。
  */
 class aes {

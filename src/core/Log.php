@@ -4,7 +4,6 @@ namespace framework\core;
 
 /**
  * 日志类
- * Log::write 写入日志
  */
 class Log {
 
@@ -19,12 +18,11 @@ class Log {
     const DEBUG = 'DEBUG';  // 调试: 调试信息
     const SQL = 'SQL';  // SQL：SQL语句
 
-    static $format = ' c '; /* 日期格式 */
-
     /**
      * debug 详情
      * @param type $message
      */
+
     public static function debug($message) {
         self::write($message, self::DEBUG);
     }
@@ -87,6 +85,14 @@ class Log {
     }
 
     /**
+     * 记录 sql
+     * @param type $message
+     */
+    public static function sql($message) {
+        self::write($message, self::SQL);
+    }
+
+    /**
      * 日志直接写入
      * @param type $message  日志信息
      * @param type $level    日志级别
@@ -96,11 +102,11 @@ class Log {
         if (empty($message)) {
             return false;
         } else {
-            $message = is_array($message) ? serialize($message) : $message;
+            $message = is_string($message) ? $message : var_export($message, true);
         }
 
         if (empty($destination)) {
-            $destination = ROOT_PATH . "cache/{$level}_" . date('Y_m_d') . '.log';
+            $destination = ROOT_PATH . "cache/{$level}_" . date('Ymd') . '.log';
         }
 
         // 自动创建日志目录
@@ -114,7 +120,7 @@ class Log {
             rename($destination, $log_dir . '/' . time() . '-' . basename($destination));
         }
 
-        $now = date(self::$format);
+        $now = date(' c '); /* 日期格式 */
 
         if (php_sapi_name() == "cli") {
             $content = "{$now} {$level}: {$message}\r\n---------------------------------------------------------------\r\n\r\n";

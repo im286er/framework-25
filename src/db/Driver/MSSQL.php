@@ -203,7 +203,7 @@ class MSSQL extends DbDriver {
         /* 如果 where 为空,不允许执行 */
         if (empty($options['where'])) {
             $this->error = "[UPDATE 语句无 Where 条件] [ SQL语句 ] : {$sql} ";
-            Log::write($this->error, Log::SQL);
+            Log::sql($this->error);
             return false;
         }
 
@@ -228,7 +228,7 @@ class MSSQL extends DbDriver {
         /* 如果 where 为空,不允许执行 */
         if (empty($options['where'])) {
             $this->error = "[DELETE 语句无 Where 条件] [ SQL语句 ] : {$sql} ";
-            Log::write($this->error, Log::SQL);
+            Log::sql($this->error);
             return false;
         }
 
