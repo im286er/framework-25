@@ -107,6 +107,7 @@ class Log {
 
         if (empty($destination)) {
             $destination = ROOT_PATH . "cache/{$level}_" . date('Ymd') . '.log';
+            $destination = strtolower($destination);
         }
 
         // 自动创建日志目录
@@ -116,14 +117,18 @@ class Log {
         }
 
         if (is_file($destination) && filesize($destination) >= 20971520) {
-            /* 10Mb 重命名 */
-            rename($destination, $log_dir . '/' . time() . '-' . basename($destination));
+            /* 20Mb 重命名 */
+            try {
+                rename($destination, $log_dir . '/' . time() . '-' . basename($destination));
+            } catch (\Exception $e) {
+                
+            }
         }
 
         $now = date(' c '); /* 日期格式 */
 
         if (php_sapi_name() == "cli") {
-            $content = "{$now} {$level}: {$message}\r\n---------------------------------------------------------------\r\n\r\n";
+            $content = "[{$now}] {$level}: {$message}\r\n---------------------------------------------------------------\r\n\r\n";
         } else {
             $uri = Request::getInstance()->get_full_url();
             $source_url = Request::getInstance()->get_url_source();
