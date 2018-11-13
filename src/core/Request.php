@@ -2,6 +2,8 @@
 
 namespace framework\core;
 
+use framework\core\Exception;
+
 /**
  * HTTP 请求
  */

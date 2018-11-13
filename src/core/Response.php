@@ -2,6 +2,8 @@
 
 namespace framework\core;
 
+use framework\core\Exception;
+
 /**
  * 响应
  */
@@ -152,7 +154,7 @@ class Response {
      *
      * @param int $code HTTP status code.
      * @return object|int Self reference
-     * @throws \Exception If invalid status code
+     * @throws Exception If invalid status code
      */
     public function status($code = null) {
         if ($code === null) {

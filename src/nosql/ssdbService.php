@@ -2,6 +2,7 @@
 
 namespace framework\nosql;
 
+use framework\core\Exception;
 use framework\core\Config;
 use framework\core\Log;
 
@@ -96,11 +97,11 @@ class ssdbService {
 
     /**
      * 处理异常信息
-     * @param \Exception $ex
+     * @param Exception $ex
      */
     public function exception($ex) {
         Log::emerg($ex);
-        throw new \Exception($ex);
+        throw new Exception($ex);
     }
 
     /**

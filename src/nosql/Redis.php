@@ -198,7 +198,7 @@ class Redis {
             }
             /* 设置新版本号 */
             $this->ver = $this->_getConForKey($key)->incrby($key, 1);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -230,7 +230,7 @@ class Redis {
                 }
 
                 return $this->ver;
-            } catch (\Exception $ex) {
+            } catch (Exception $ex) {
                 //连接状态置为false
                 $this->isConnected = false;
                 $this->is_available();
@@ -264,7 +264,7 @@ class Redis {
             if ($data && $data['ver'] == $this->ver) {
                 return $data['data'];
             }
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -294,7 +294,7 @@ class Redis {
                 // 有时间限制
                 return $this->_getConForKey($key)->setex($key, $ttl, $data);
             }
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -312,7 +312,7 @@ class Redis {
 
         try {
             return $this->_getConForKey($key)->delete($key);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -391,7 +391,7 @@ class Redis {
         try {
             // 有时间限制
             return $this->_getConForKey($key)->set($key, 1, array('nx', 'ex' => $ttl));
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -428,7 +428,7 @@ class Redis {
                 // 有时间限制
                 return $this->_getConForKey($key)->setex($key, $ttl, $var);
             }
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -452,7 +452,7 @@ class Redis {
             }
 
             return $this->getValue($value, $default);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -470,7 +470,7 @@ class Redis {
 
         try {
             return $this->_getConForKey($key)->delete($key);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -581,7 +581,7 @@ class Redis {
             }
 
             return $this->getValue($value, $default);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -602,7 +602,7 @@ class Redis {
 
         try {
             return $this->_getConForKey($key)->hset($key, $id, $var);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -623,7 +623,7 @@ class Redis {
 
         try {
             return $this->_getConForKey($key)->hSetNx($key, $id, $var);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -652,7 +652,7 @@ class Redis {
             }
 
             return false;
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -686,7 +686,7 @@ class Redis {
 
         try {
             return $this->_getConForKey($key)->hdel($key, $id);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();

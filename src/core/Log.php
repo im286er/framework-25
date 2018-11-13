@@ -2,6 +2,8 @@
 
 namespace framework\core;
 
+use framework\core\Exception;
+
 /**
  * 日志类
  */
@@ -120,7 +122,7 @@ class Log {
             /* 20Mb 重命名 */
             try {
                 rename($destination, $log_dir . '/' . time() . '-' . basename($destination));
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 
             }
         }

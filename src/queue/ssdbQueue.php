@@ -2,6 +2,7 @@
 
 namespace framework\queue;
 
+use framework\core\Exception;
 use framework\nosql\ssdbService;
 
 /**

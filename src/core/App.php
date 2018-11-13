@@ -2,6 +2,8 @@
 
 namespace framework\core;
 
+use framework\core\Exception;
+
 class App {
 
     public $app_name;
@@ -283,7 +285,7 @@ class App {
             $json = json_encode($data);
             if ($json == false) {
                 Log::emerg($data);
-                throw new \Exception('服务器内部处理错误！' . json_last_error_msg(), 500);
+                throw new Exception('服务器内部处理错误！' . json_last_error_msg(), 500);
             }
             Response::getInstance()->clear()->contentType('application/json')->write($json)->send();
         } else {

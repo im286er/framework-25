@@ -64,7 +64,7 @@ class Cache {
             } else {
                 $this->isConnected = true;
             }
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             $this->isConnected = false;
         }
     }
@@ -122,7 +122,7 @@ class Cache {
             $this->link->set($key, $this->ver);
             /* 正常返回 */
             return $this;
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -164,7 +164,7 @@ class Cache {
                 $this->link->set($key, $this->ver);
 
                 return $this->ver;
-            } catch (\Exception $ex) {
+            } catch (Exception $ex) {
                 //连接状态置为false
                 $this->isConnected = false;
                 $this->is_available();
@@ -184,7 +184,7 @@ class Cache {
 
         try {
             return $this->link->get($key);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -213,7 +213,7 @@ class Cache {
                 }
                 return $this->link->set($key, $var, MEMCACHE_COMPRESSED, $expire);
             }
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -231,7 +231,7 @@ class Cache {
 
         try {
             return $this->link->delete($key);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -253,7 +253,7 @@ class Cache {
 
         try {
             return $this->link->add($key, 1, false, $ttl);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -270,7 +270,7 @@ class Cache {
         $key = "lock_{$cache_id}";
         try {
             return $this->link->delete($key);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -298,7 +298,7 @@ class Cache {
                 }
                 return $this->link->set($key, $var, MEMCACHE_COMPRESSED, $expire);
             }
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -315,7 +315,7 @@ class Cache {
         $key = $this->prefix . $cache_id;
         try {
             return $this->link->get($key);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -332,7 +332,7 @@ class Cache {
         $key = $this->prefix . $cache_id;
         try {
             return $this->link->delete($key);
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -364,7 +364,7 @@ class Cache {
                 $count = 1;
             }
             $count += 1;
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -374,7 +374,7 @@ class Cache {
         try {
             $this->link->set($key, $count, 0, $ttl);
             return true;
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
@@ -397,7 +397,7 @@ class Cache {
                 'memory_usage' => $stats['bytes'],
                 'memory_available' => $stats['limit_maxbytes'],
             ];
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();

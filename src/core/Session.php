@@ -2,8 +2,6 @@
 
 namespace framework\core;
 
-use framework\session\memcacheDriver;
-
 class Session {
 
     /**
@@ -18,8 +16,16 @@ class Session {
      * @return void
      */
     public function init() {
+
+        $type = Config::getInstance()->get('SESSION_TYPE') ? Config::getInstance()->get('SESSION_TYPE') : 'memcache';
+        
+        $class = strpos($type, '\\') ? $type : 'framework\\session\\' . $type . 'Driver';
+        if (!class_exists($class)) {
+            throw new Exception('error session handler:' . $class);
+        }
+
         /* 采用 NoSQL 保存 session */
-        session_set_save_handler(new memcacheDriver());
+        session_set_save_handler(new $class());
 
         /* 启动session */
         session_start();

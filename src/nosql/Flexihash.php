@@ -2,6 +2,8 @@
 
 namespace framework\nosql;
 
+use framework\core\Exception;
+
 /**
  * A simple consistent hashing implementation with pluggable hash algorithms.
  *
@@ -69,7 +71,7 @@ class Flexihash {
      */
     public function addTarget($target, $weight = 1) {
         if (isset($this->targetToPositions[$target])) {
-            throw new \Exception("Target '$target' already exists.");
+            throw new Exception("Target '$target' already exists.");
         }
 
         $this->targetToPositions[$target] = [];
@@ -107,11 +109,11 @@ class Flexihash {
      *
      * @param string $target
      * @return self fluent
-     * @throws \Flexihash\Exception when target does not exist
+     * @throws Exception when target does not exist
      */
     public function removeTarget($target) {
         if (!isset($this->targetToPositions[$target])) {
-            throw new \Exception("Target '$target' does not exist.");
+            throw new Exception("Target '$target' does not exist.");
         }
 
         foreach ($this->targetToPositions[$target] as $position) {
@@ -137,12 +139,12 @@ class Flexihash {
      * Looks up the target for the given resource.
      * @param string $resource
      * @return string
-     * @throws \Flexihash\Exception when no targets defined
+     * @throws Exception when no targets defined
      */
     public function lookup($resource) {
         $targets = $this->lookupList($resource, 1);
         if (empty($targets)) {
-            throw new \Exception('No targets exist');
+            throw new Exception('No targets exist');
         }
 
         return $targets[0];
@@ -155,11 +157,11 @@ class Flexihash {
      * @param string $resource
      * @param int $requestedCount The length of the list to return
      * @return array List of targets
-     * @throws \Flexihash\Exception when count is invalid
+     * @throws Exception when count is invalid
      */
     public function lookupList($resource, $requestedCount) {
         if (!$requestedCount) {
-            throw new \Exception('Invalid count requested');
+            throw new Exception('Invalid count requested');
         }
 
         // handle no targets
