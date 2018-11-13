@@ -6,7 +6,7 @@ use framework\core\Exception;
 use framework\core\Config;
 
 /**
- * 缓存管理类
+ * 基本缓存管理类
  */
 class Cache {
 
