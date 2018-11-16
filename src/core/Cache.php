@@ -39,7 +39,8 @@ class Cache {
     }
 
     public function group($group = '_cache_') {
-        return $this->handler->group($group);
+        $this->handler->group($group);
+        return $this;
     }
 
     public function clear() {
