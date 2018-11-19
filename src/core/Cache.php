@@ -44,7 +44,7 @@ class Cache {
     }
 
     public function clear() {
-        return $this->handler->clear($group);
+        return $this->handler->clear();
     }
 
     public function get($cache_id) {
