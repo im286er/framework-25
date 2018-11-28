@@ -51,7 +51,7 @@ class Cache {
         return $this->handler->get($cache_id);
     }
 
-    public function set($cache_id, $var, $expire) {
+    public function set($cache_id, $var, $expire = 1209600) {
         return $this->handler->set($cache_id, $var, $expire);
     }
 

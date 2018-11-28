@@ -372,6 +372,34 @@ class FileCache {
     }
 
     /**
+     * 操作次数限制函数: 限制 user_id 在 period 秒内能操作 action 最多 max_count 次.
+     * 如果超过限制, 返回 false.
+     * @param type $uid
+     * @param type $action
+     * @param type $max_count
+     * @param type $period
+     * @return boolean
+     */
+    public function act_limit($uid, $action, $max_count, $period) {
+        $timestamp = time();
+        $expire = intval($timestamp / $period) * $period + $period;
+        $ttl = $expire - $timestamp;
+        $key = "act_limit|{$uid}|{$action}";
+
+        $count = $this->simple_get($key);
+        if ($count) {
+            if ($count > $max_count) {
+                return false;
+            }
+        } else {
+            $count = 1;
+        }
+        $count += 1;
+
+        return $this->simple_set($key, $count, $ttl);
+    }
+
+    /**
      * 清除全部缓存
      * @access public
      * @return boolean
