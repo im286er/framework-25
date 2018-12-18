@@ -122,10 +122,12 @@ class Config implements \ArrayAccess {
             $name = strtolower($name);
             $name = explode('.', $name, 3);
 
-            if (count($name) == 2) {
-                $this->config[strtolower($name[0])][$name[1]] = $value;
+            if (count($name) == 1) {
+                $this->config[$name[0]] = $value;
+            } elseif (count($name) == 2) {
+                $this->config[$name[0]][$name[1]] = $value;
             } else {
-                $this->config[strtolower($name[0])][$name[1]][$name[2]] = $value;
+                $this->config[$name[0]][$name[1]][$name[2]] = $value;
             }
 
             return $value;
