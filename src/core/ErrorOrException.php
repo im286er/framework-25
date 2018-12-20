@@ -150,7 +150,7 @@ class ErrorOrException {
         $templates_path = Config::getInstance()->get('error_views_path');
 
         if (empty($templates_path)) {
-            $templates_path = __DIR__ . '/../tpl/errors/';
+            $templates_path = __DIR__ . '/../tpl/';
         }
 
         if (Request::getInstance()->isCli() == true) {
@@ -180,7 +180,7 @@ class ErrorOrException {
         $templates_path = Config::getInstance()->get('error_views_path');
 
         if (empty($templates_path)) {
-            $templates_path = __DIR__ . '/../tpl/errors/';
+            $templates_path = __DIR__ . '/../tpl/';
         }
 
         $message = $exception->getMessage();
@@ -206,7 +206,7 @@ class ErrorOrException {
         $templates_path = Config::getInstance()->get('error_views_path');
 
         if (empty($templates_path)) {
-            $templates_path = __DIR__ . '/../tpl/errors/';
+            $templates_path = __DIR__ . '/../tpl/';
         }
 
         View::getInstance()->assign('message', $message);

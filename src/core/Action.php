@@ -19,11 +19,11 @@ abstract class Action {
      * @var config
      * @access protected
      */
-    protected $config = array();
+    protected $config = [];
 
     // 初始化
     function __initialize() {
-
+        
     }
 
     /**
@@ -123,28 +123,6 @@ abstract class Action {
     }
 
     /**
-     * Ajax方式返回数据到客户端
-     * @access protected
-     * @param mixed $data 要返回的数据
-     * @param String $type AJAX返回数据格式
-     * @return void
-     */
-    public function ajaxReturn($data, $type = 'JSON') {
-        switch (strtoupper($type)) {
-            case 'JSON' :
-                Response::getInstance()->json($data);
-                break;
-            case 'JSONP':
-                Response::getInstance()->jsonp($data);
-                break;
-            default :
-                Response::getInstance()->json($data);
-                break;
-        }
-        exit();
-    }
-
-    /**
      * 跳转(URL重定向）
      * @access protected
      * @param string $url 跳转的URL表达式
@@ -202,7 +180,13 @@ abstract class Action {
             $this->assign("jumpUrl", $url);
         }
 
-        $return = $this->fetch('dispatch_jump.tpl.php', __DIR__ . '/../tpl/');
+        /* 模板目录 */
+        $templates_path = Config::getInstance()->get('error_views_path');
+        if (empty($templates_path)) {
+            $templates_path = __DIR__ . '/../tpl/';
+        }
+
+        $return = $this->fetch('dispatch_jump.tpl.php', $templates_path);
         Response::getInstance()->clear()->write($return)->send();
         // 中止执行  避免出错后继续执行
         exit();
@@ -225,7 +209,7 @@ abstract class Action {
             $data['msg'] = $message;
             $data['ret'] = $status;
             $data['data'] = $jumpUrl;
-            $this->ajaxReturn($data);
+            return Response::getInstance()->json($data);
         }
         if (is_int($ajax)) {
             $this->assign('waitSecond', $ajax);
@@ -236,8 +220,13 @@ abstract class Action {
 
         // 提示标题
         $this->assign('msgTitle', $status ? '操作成功' : '操作失败');
-
         $this->assign('status', $status);   // 状态
+
+        $templates_path = Config::getInstance()->get('error_views_path');
+        if (empty($templates_path)) {
+            $templates_path = __DIR__ . '/../tpl/';
+        }
+
         if ($status) { //发送成功信息
             $this->assign('message', $message); // 提示信息
             // 成功操作后默认停留3秒
@@ -246,7 +235,6 @@ abstract class Action {
             if (empty($jumpUrl)) {
                 $this->assign("jumpUrl", Request::getInstance()->get_url_source());
             }
-            $return = $this->fetch('dispatch_jump.tpl.php', __DIR__ . '/../tpl/');
         } else {
             $this->assign('error', $message); // 提示信息
             //发生错误时候默认停留3秒
@@ -255,9 +243,8 @@ abstract class Action {
             if (empty($jumpUrl)) {
                 $this->assign('jumpUrl', "javascript:history.back(-1);");
             }
-
-            $return = $this->fetch('dispatch_jump.tpl.php', __DIR__ . '/../tpl/');
         }
+        $return = $this->fetch('dispatch_jump.tpl.php', $templates_path);
         Response::getInstance()->clear()->write($return)->send();
         // 中止执行  避免出错后继续执行
         exit();
