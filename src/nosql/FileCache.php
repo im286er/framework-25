@@ -245,7 +245,6 @@ class FileCache {
         $result = file_put_contents($filename, $data);
 
         if ($result) {
-            clearstatcache();
             return true;
         } else {
             return false;
@@ -430,7 +429,11 @@ class FileCache {
      * @return boolean
      */
     private function unlink($path) {
-        return is_file($path) && unlink($path);
+        if (is_file($path) && file_exists($path)) {
+            unlink($path);
+            return true;
+        }
+        return false;
     }
 
 }
