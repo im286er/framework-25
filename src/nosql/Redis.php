@@ -879,6 +879,22 @@ class Redis {
     }
 
     /**
+     * zrank
+     * 返回有序集 key 中成员 member 的排名。其中有序集成员按 score 值递增(从小到大)顺序排列。
+     * 排名以 0 为底，也就是说， score 值最小的成员排名为 0
+     * 参数
+     *      name - zset 的名字.
+     *      key -
+     * 返回值
+     * found.
+     *     如果 key 是有序集     name 的成员，返回 key 的排名。
+     *     如果 key 不是有序集   name 的成员，返回 nil 。
+     */
+    public function zrank($name, $k) {
+        return $this->_getConForKey($name)->zRank($name, $k);
+    }
+
+    /**
      * zrange, zrrange
      * 注意! 本方法在 offset 越来越大时, 会越慢!
      * 根据下标索引区间 [offset, offset + limit) 获取 key-score 对, 下标从 0 开始. zrrange 是反向顺序获取.
