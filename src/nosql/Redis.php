@@ -894,6 +894,10 @@ class Redis {
         return $this->_getConForKey($name)->zRank($name, $k);
     }
 
+    public function zrrank($name, $k) {
+        return $this->_getConForKey($name)->zRevRank($name, $k);
+    }
+
     /**
      * zrange, zrrange
      * 注意! 本方法在 offset 越来越大时, 会越慢!
