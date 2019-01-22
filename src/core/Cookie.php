@@ -20,7 +20,7 @@ class Cookie {
         //  cookie 启用安全传输
         'secure' => false,
         // httponly设置
-        'httponly' => false,
+        'httponly' => true,
         // 是否使用 setcookie
         'setcookie' => true,
     ];
