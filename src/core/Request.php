@@ -356,7 +356,7 @@ class Request {
         }
 
         $agent = strtolower($agent);
-        $keys = array('bot', 'slurp', 'spider', 'crawl', 'curl');
+        $keys = array('bot', 'slurp', 'spider', 'crawl', 'curl', 'knowledge ai');
         foreach ($keys as $key) {
             if (strpos($agent, $key) !== false) {
                 return true;
