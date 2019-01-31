@@ -26,12 +26,6 @@ class Cookie {
     ];
 
     /**
-     * 是否初始化
-     * @var bool
-     */
-    protected $init;
-
-    /**
      * 构造方法
      * @access public
      */
@@ -52,8 +46,6 @@ class Cookie {
         if (!empty($this->config['httponly']) && PHP_SESSION_ACTIVE != session_status()) {
             ini_set('session.cookie_httponly', 1);
         }
-
-        $this->init = true;
     }
 
     public static function getInstance() {
@@ -88,8 +80,6 @@ class Cookie {
      * @return void
      */
     public function set($name, $value = '', $option = null) {
-        !isset($this->init) && $this->init();
-
         // 参数设置(会覆盖黙认设置)
         if (!is_null($option)) {
             if (is_numeric($option)) {
@@ -145,8 +135,6 @@ class Cookie {
      * @return bool
      */
     public function has($name, $prefix = null) {
-        !isset($this->init) && $this->init();
-
         $prefix = !is_null($prefix) ? $prefix : $this->config['prefix'];
         $name = $prefix . $name;
 
@@ -161,8 +149,6 @@ class Cookie {
      * @return mixed
      */
     public function get($name = '', $prefix = null) {
-        !isset($this->init) && $this->init();
-
         $prefix = !is_null($prefix) ? $prefix : $this->config['prefix'];
         $key = $prefix . $name;
 
@@ -199,8 +185,6 @@ class Cookie {
      * @return void
      */
     public function delete($name, $prefix = null) {
-        !isset($this->init) && $this->init();
-
         $config = $this->config;
         $prefix = !is_null($prefix) ? $prefix : $config['prefix'];
         $name = $prefix . $name;
@@ -224,7 +208,6 @@ class Cookie {
         if (empty($_COOKIE)) {
             return;
         }
-        !isset($this->init) && $this->init();
 
         // 要删除的cookie前缀，不指定则删除config设置的指定前缀
         $config = $this->config;
