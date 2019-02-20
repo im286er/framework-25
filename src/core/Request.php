@@ -339,7 +339,11 @@ class Request {
             return false;
         }
 
-        if (strpos($agent, 'app') !== false) {
+        if (strpos($agent, 'chance app') !== false) {
+            return true;
+        }
+
+        if (strpos($agent, 'uni-app appservice') !== false) {
             return true;
         }
 
