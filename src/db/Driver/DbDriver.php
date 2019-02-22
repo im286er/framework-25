@@ -29,7 +29,28 @@ abstract class DbDriver {
     // 当前连接ID
     protected $link = null;
     // 数据库表达式
-    protected $exp = ['eq' => '=', 'neq' => '<>', 'gt' => '>', 'egt' => '>=', 'lt' => '<', 'elt' => '<=', 'notlike' => 'NOT LIKE', 'like' => 'LIKE', 'in' => 'IN', 'notin' => 'NOT IN', 'not in' => 'NOT IN', 'between' => 'BETWEEN', 'not between' => 'NOT BETWEEN', 'notbetween' => 'NOT BETWEEN'];
+    protected $exp = [
+        'eq' => '=',
+        'neq' => '<>',
+        'gt' => '>',
+        'egt' => '>=',
+        'lt' => '<',
+        'elt' => '<=',
+        '=' => '=',
+        '<>' => '<>',
+        '>' => '>',
+        '>=' => '>=',
+        '<' => '<',
+        '<=' => '<=',
+        'notlike' => 'NOT LIKE',
+        'like' => 'LIKE',
+        'in' => 'IN',
+        'notin' => 'NOT IN',
+        'not in' => 'NOT IN',
+        'between' => 'BETWEEN',
+        'not between' => 'NOT BETWEEN',
+        'notbetween' => 'NOT BETWEEN',
+    ];
     // 查询表达式
     protected $selectSql = 'SELECT%DISTINCT% %FIELD% FROM %TABLE%%FORCE%%JOIN%%WHERE%%GROUP%%HAVING%%ORDER%%LIMIT% %UNION%%LOCK%%COMMENT%';
     // 查询次数
@@ -448,13 +469,14 @@ abstract class DbDriver {
             // 支持 'field1'=>'field2' 这样的字段别名定义
             $array = array();
             foreach ($fields as $key => $field) {
-                if (!is_numeric($key))
+                if (!is_numeric($key)) {
                     $array[] = $this->parseKey($key) . ' AS ' . $this->parseKey($field);
-                else
+                } else {
                     $array[] = $this->parseKey($field);
+                }
             }
             $fieldsStr = implode(',', $array);
-        }else {
+        } else {
             $fieldsStr = '*';
         }
         //TODO 如果是查询全部字段，并且是join的方式，那么就把要查的表加个别名，以免字段被覆盖
@@ -586,6 +608,8 @@ abstract class DbDriver {
                 } elseif (preg_match('/^(notbetween|not between|between)$/', $exp)) { // BETWEEN运算
                     $data = is_string($val[1]) ? explode(',', $val[1]) : $val[1];
                     $whereStr .= $key . ' ' . $this->exp[$exp] . ' ' . $this->parseValue($data[0]) . ' AND ' . $this->parseValue($data[1]);
+                } elseif (preg_match('/^(=|<>|>|>=|<|<=)$/', $exp)) { // 比较运算
+                    $whereStr .= $key . ' ' . $this->exp[$exp] . ' ' . $this->parseValue($val[1]);
                 } else {
                     throw new Exception('where express error:' . $val[0], 500);
                 }
