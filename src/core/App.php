@@ -180,11 +180,11 @@ class App {
         }
 
         /* 检查是否合法 */
-        if (empty($_GET['c']) || preg_match('/^[A-Za-z](\/|\w)*$/', $_GET['c']) == false) {
+        if (empty($_GET['c'])) {
             $_GET['c'] = 'index';
         }
 
-        if (empty($_GET['a']) || preg_match('/^[A-Za-z](\/|\w)*$/', $_GET['a']) == false) {
+        if (empty($_GET['a'])) {
             $_GET['a'] = 'index';
         }
 
