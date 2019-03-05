@@ -28,10 +28,10 @@ class Cache {
     private $reConnected = 0;
 
     /**
-     * 最大重连次数,默认为3次
+     * 最大重连次数,默认为2次
      * @var int
      */
-    private $maxReConnected = 3;
+    private $maxReConnected = 2;
 
     public function __construct() {
 
@@ -50,7 +50,7 @@ class Cache {
         $this->link = new \Memcache;
         /* 连接 memcached 缓存服务器 */
         foreach ($this->conf as $k => $conf) {
-            $this->link->addServer($conf['host'], $conf['port']);
+            $this->link->addServer($conf['host'], $conf['port'], true, 1, 500);
 
             if (!empty($conf['prefix'])) {
                 $this->prefix = $conf['prefix'];
