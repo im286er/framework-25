@@ -17,7 +17,7 @@ class Session {
      */
     public function init() {
 
-        $type = Config::getInstance()->get('SESSION_TYPE') ? Config::getInstance()->get('SESSION_TYPE') : 'memcache';
+        $type = Config::getInstance()->get('SESSION_TYPE') ? Config::getInstance()->get('SESSION_TYPE') : 'memcached';
 
         $class = strpos($type, '\\') ? $type : 'framework\\session\\' . $type . 'Driver';
         if (!class_exists($class)) {

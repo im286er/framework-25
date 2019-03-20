@@ -14,7 +14,7 @@ class Cache {
     private $group = '_cache_';
     private $prefix = 'guipin_';
     private $ver = 0;
-    private $link = [];
+    private $link = null;
 
     /**
      * 是否连接server
@@ -35,9 +35,6 @@ class Cache {
 
     public function __construct() {
 
-        ini_set('memcache.hash_function', 'crc32');
-        ini_set('memcache.hash_strategy', 'consistent');
-
         $this->conf = Config::getInstance()->get('memcached_cache');
         if (empty($this->conf)) {
             throw new Exception('请配置 memcache !');
@@ -47,15 +44,19 @@ class Cache {
     }
 
     private function connect() {
-        $this->link = new \Memcache;
+
+        $this->link = new \Memcached;
+
         /* 连接 memcached 缓存服务器 */
         foreach ($this->conf as $k => $conf) {
-            $this->link->addServer($conf['host'], $conf['port'], true, 1, 500);
+            $this->link->addServer($conf['host'], $conf['port']);
 
             if (!empty($conf['prefix'])) {
                 $this->prefix = $conf['prefix'];
             }
         }
+
+        $this->link->setOption(\Memcached::OPT_BINARY_PROTOCOL, true);
 
         //如果获取服务器池的统计信息返回false,说明服务器池中有不可用服务器
         try {
@@ -205,13 +206,13 @@ class Cache {
         try {
             if ($expire == 0) {
                 // 缓存 6.5 天
-                return $this->link->set($key, $var, MEMCACHE_COMPRESSED, 648000);
+                return $this->link->set($key, $var, time() + 648000);
             } else {
                 // 有时间限制
                 if ($expire >= 2592000) {
-                    $expire = 0;
+                    $expire = 2592000;
                 }
-                return $this->link->set($key, $var, MEMCACHE_COMPRESSED, $expire);
+                return $this->link->set($key, $var, time() + $expire);
             }
         } catch (Exception $ex) {
             //连接状态置为false
@@ -252,7 +253,7 @@ class Cache {
         $key = "lock_{$cache_id}";
 
         try {
-            return $this->link->add($key, 1, false, $ttl);
+            return $this->link->add($key, 1, time() + $ttl);
         } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -290,13 +291,13 @@ class Cache {
         try {
             if ($expire == 0) {
                 // 缓存 7.5 天
-                return $this->link->set($key, $var, MEMCACHE_COMPRESSED, 648000);
+                return $this->link->set($key, $var, time() + 648000);
             } else {
                 // 有时间限制
                 if ($expire >= 2592000) {
-                    $expire = 0;
+                    $expire = 2592000;
                 }
-                return $this->link->set($key, $var, MEMCACHE_COMPRESSED, $expire);
+                return $this->link->set($key, $var, time() + $expire);
             }
         } catch (Exception $ex) {
             //连接状态置为false
@@ -352,34 +353,28 @@ class Cache {
     public function act_limit($uid, $action, $max_count, $period) {
         $timestamp = time();
         $expire = intval($timestamp / $period) * $period + $period;
-        $ttl = $expire - $timestamp;
         $key = "act_limit|{$uid}|{$action}";
-        try {
-            $count = $this->link->get($key);
-            if ($count) {
-                if ($count > $max_count) {
-                    return false;
-                }
+
+        do {
+            /* 获取缓存及它的标记 */
+            $cas = 0;
+            $count = $this->link->get($key, null, $cas);
+            /* 如果不存在， 创建并进行一个原子添加（如果其他客户端已经添加， 这里就返回false） */
+            if ($this->link->getResultCode() == \Memcached :: RES_NOTFOUND) {
+                /* 设置为 1 */
+                $this->link->add($key, 1, $expire);
             } else {
-                $count = 1;
+                /* 其他情况下以cas方式去存储， 这样当其他客户端修改过， 则返回false */
+                $count = intval($count) + 1;
+                $this->link->cas($cas, $key, $count);
             }
-            $count += 1;
-        } catch (Exception $ex) {
-            //连接状态置为false
-            $this->isConnected = false;
-            $this->is_available();
+        } while ($this->link->getResultCode() != \Memcached :: RES_SUCCESS);
+
+        if ($count > $max_count) {
             return false;
         }
 
-        try {
-            $this->link->set($key, $count, 0, $ttl);
-            return true;
-        } catch (Exception $ex) {
-            //连接状态置为false
-            $this->isConnected = false;
-            $this->is_available();
-        }
-        return false;
+        return true;
     }
 
     /**
@@ -387,22 +382,7 @@ class Cache {
      * @return type
      */
     public function get_stats() {
-        try {
-            $stats = $this->link->getStats();
-
-            return [
-                'hits' => $stats['get_hits'],
-                'misses' => $stats['get_misses'],
-                'uptime' => $stats['uptime'],
-                'memory_usage' => $stats['bytes'],
-                'memory_available' => $stats['limit_maxbytes'],
-            ];
-        } catch (Exception $ex) {
-            //连接状态置为false
-            $this->isConnected = false;
-            $this->is_available();
-        }
-        return false;
+        return $this->link->getStats();
     }
 
 }

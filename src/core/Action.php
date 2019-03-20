@@ -211,6 +211,10 @@ abstract class Action {
             $data['data'] = $jumpUrl;
             return Response::getInstance()->json($data);
         }
+        
+        // 默认停留3秒
+        $this->assign('waitSecond', 3);
+
         if (is_int($ajax)) {
             $this->assign('waitSecond', $ajax);
         }
@@ -229,16 +233,12 @@ abstract class Action {
 
         if ($status) { //发送成功信息
             $this->assign('message', $message); // 提示信息
-            // 成功操作后默认停留3秒
-            $this->assign('waitSecond', 3);
             // 默认操作成功自动返回操作前页面
             if (empty($jumpUrl)) {
                 $this->assign("jumpUrl", Request::getInstance()->get_url_source());
             }
         } else {
             $this->assign('error', $message); // 提示信息
-            //发生错误时候默认停留3秒
-            $this->assign('waitSecond', 3);
             // 默认发生错误的话自动返回上页
             if (empty($jumpUrl)) {
                 $this->assign('jumpUrl', "javascript:history.back(-1);");

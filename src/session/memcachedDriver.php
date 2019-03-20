@@ -7,7 +7,7 @@ use framework\nosql\Cache;
 /**
  * session memcached 驱动类
  */
-class memcacheDriver extends \SessionHandler {
+class memcachedDriver extends \SessionHandler {
 
     private $ttl = 7200;       /* 2小时 */
 
