@@ -70,11 +70,7 @@ class Redis {
         foreach ($this->conf as $k => $conf) {
             $con = new \Redis;
 
-            if ($conf['persistent'] == true) {
-                $rs = $con->pconnect($conf['host'], $conf['port'], $conf['timeout'], 'persistent_id_' . $conf['select']);
-            } else {
-                $rs = $con->connect($conf['host'], $conf['port'], $conf['timeout']);
-            }
+            $rs = $con->connect($conf['host'], $conf['port'], $conf['timeout']);
 
             if ($rs == true) {
                 $this->isConnected = true;
