@@ -40,12 +40,6 @@ class Response {
     protected $body;
 
     /**
-     * 已经响应
-     * @var bool
-     */
-    protected $sent = false;
-
-    /**
      * @var array HTTP status codes
      */
     public static $codes = [
@@ -138,15 +132,78 @@ class Response {
     }
 
     /**
+     * LastModified
+     * @access public
+     * @param  string $time
+     * @return $this
+     */
+    public function lastModified(string $time) {
+        $this->headers['Last-Modified'] = $time;
+
+        return $this;
+    }
+
+    /**
+     * Expires
+     * @access public
+     * @param  string $time
+     * @return $this
+     */
+    public function expires(string $time) {
+        $this->headers['Expires'] = $time;
+
+        return $this;
+    }
+
+    /**
+     * ETag
+     * @access public
+     * @param  string $eTag
+     * @return $this
+     */
+    public function eTag(string $eTag) {
+        $this->headers['ETag'] = $eTag;
+
+        return $this;
+    }
+
+    /**
+     * 页面缓存控制
+     * @access public
+     * @param  string $cache 状态码
+     * @return $this
+     */
+    public function cacheControl(string $cache) {
+        $this->headers['Cache-control'] = $cache;
+
+        return $this;
+    }
+
+    /**
      * 页面输出类型
      * @access public
      * @param  string $contentType 输出类型
      * @param  string $charset     输出编码
      * @return $this
      */
-    public function contentType($contentType, $charset = 'utf-8') {
-        $this->header('Content-Type', $contentType . '; charset=' . $charset);
+    public function contentType(string $contentType, string $charset = 'utf-8') {
+        $this->headers['Content-Type'] = $contentType . '; charset=' . $charset;
+
         return $this;
+    }
+
+    /**
+     * 获取头部信息
+     * @access public
+     * @param  string $name 头部名称
+     * @return mixed
+     */
+    public function getHeaders(string $name = '') {
+        if (!empty($name)) {
+            return $this->headers[$name] ?? null;
+        }
+
+        return $this->headers;
     }
 
     /**
@@ -187,14 +244,6 @@ class Response {
         }
 
         return $this;
-    }
-
-    /**
-     * Returns the headers from the response
-     * @return array
-     */
-    public function headers() {
-        return $this->headers;
     }
 
     /**
@@ -276,13 +325,6 @@ class Response {
     }
 
     /**
-     * Gets whether response was sent.
-     */
-    public function sent() {
-        return $this->sent;
-    }
-
-    /**
      * Sends a HTTP response.
      */
     public function send() {
@@ -296,7 +338,10 @@ class Response {
 
         echo $this->body;
 
-        $this->sent = true;
+        if (function_exists('fastcgi_finish_request')) {
+            // 提高页面响应
+            fastcgi_finish_request();
+        }
     }
 
     public static function getInstance() {

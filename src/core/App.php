@@ -287,7 +287,9 @@ class App {
             $json = json_encode($data);
             if ($json == false) {
                 Log::emerg($data);
-                throw new Exception('服务器内部处理错误！' . json_last_error_msg(), 500);
+                if (false === $data) {
+                    throw new \InvalidArgumentException(json_last_error_msg());
+                }
             }
             Response::getInstance()->clear()->contentType('application/json')->write($json)->send();
         } else {
@@ -296,7 +298,6 @@ class App {
                 Response::getInstance()->write($data)->send();
             }
         }
-        return;
     }
 
 }
