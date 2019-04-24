@@ -148,7 +148,7 @@ class App {
         $_ext = strtolower(pathinfo($_SERVER['PATH_INFO'], PATHINFO_EXTENSION));
 
         // 去除URL后缀
-        $_SERVER['PATH_INFO'] = preg_replace(Config::getInstance()->get('URL_HTML_SUFFIX') ? '/\.(' . trim(Config::getInstance()->get('URL_HTML_SUFFIX'), '.') . ')$/i' : '/\.' . $_ext . '$/i', '', $_SERVER['PATH_INFO']);
+        $_SERVER['PATH_INFO'] = preg_replace( "/\.{$_ext}$/i", '', $_SERVER['PATH_INFO']);
 
         // 检测路由规则 如果没有则按默认规则调度URL
         if (!Route::routerCheck()) {
