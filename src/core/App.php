@@ -144,12 +144,11 @@ class App {
         /* 载入分组配置 */
         Config::getInstance()->load(APP_PATH . $this->app_name . '/config/');
 
-        // URL后缀
-        $_ext = strtolower(pathinfo($_SERVER['PATH_INFO'], PATHINFO_EXTENSION));
-
         // 去除URL后缀
-        $_SERVER['PATH_INFO'] = preg_replace( "/\.{$_ext}$/i", '', $_SERVER['PATH_INFO']);
+        $_SERVER['PATH_INFO'] = preg_replace( "/\.html$/i", '', $_SERVER['PATH_INFO']);
+        $_SERVER['PATH_INFO'] = preg_replace( "/\.xml$/i", '', $_SERVER['PATH_INFO']);
 
+        
         // 检测路由规则 如果没有则按默认规则调度URL
         if (!Route::routerCheck()) {
             /* 默认规则调度URL */
@@ -286,6 +285,7 @@ class App {
         if (is_object($data) || is_array($data)) {
             $json = json_encode($data);
             if ($json == false) {
+                Log::emerg($data);
                 if (false === $data) {
                     throw new \InvalidArgumentException(json_last_error_msg());
                 }
