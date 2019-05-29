@@ -746,16 +746,20 @@ class Request {
         } elseif (!$this->method) {
             /* 表单请求类型伪装变量 */
             if (isset($_POST[$this->config['var_method']])) {
-                $this->method = strtoupper($_POST[$this->config['var_method']]);
-                $method = strtolower($this->method);
-                $this->{$method} = $_POST;
+                $method = strtolower($_POST[$this->config['var_method']]);
+                if (in_array($method, ['get', 'post', 'put', 'patch', 'delete'])) {
+                    $this->method = strtoupper($method);
+                    $this->{$method} = $_POST;
+                } else {
+                    $this->method = 'POST';
+                }
+                unset($_POST[$this->config['var_method']]);
             } elseif (isset($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'])) {
                 $this->method = strtoupper($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE']);
             } else {
                 $this->method = $this->isCli() ? 'GET' : (isset($this->server['REQUEST_METHOD']) ? $this->server['REQUEST_METHOD'] : $_SERVER['REQUEST_METHOD']);
             }
         }
-
         return $this->method;
     }
 
