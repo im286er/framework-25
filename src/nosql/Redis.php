@@ -475,6 +475,24 @@ class Redis {
     }
 
     /**
+     * 简单删除缓存
+     * @param type $cache_id
+     * @return type
+     */
+    public function del($cache_id) {
+        $key = $this->getCacheKey($cache_id);
+
+        try {
+            return $this->_getConForKey($key)->delete($key);
+        } catch (Exception $ex) {
+            //连接状态置为false
+            $this->isConnected = false;
+            $this->is_available();
+        }
+        return false;
+    }
+
+    /**
      * 设置 key(只针对 KV 类型) 的存活时间.
      * @param type $k
      * @param type $ttl
@@ -570,13 +588,12 @@ class Redis {
     public function hget($cache_id, $id, $default = false) {
         $key = $this->getCacheKey($cache_id);
         try {
-            $value = $this->_getConForKey($key)->hget($key, $id);
+            $value = $this->_getConForKey($key)->hGet($key, $id);
 
             if (is_null($value) || false === $value) {
                 return $default;
             }
-
-            return $this->getValue($value, $default);
+            return $value;
         } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -594,10 +611,8 @@ class Redis {
      */
     public function hset($cache_id, $id, $var) {
         $key = $this->getCacheKey($cache_id);
-        $var = $this->setValue($var);
-
         try {
-            return $this->_getConForKey($key)->hset($key, $id, $var);
+            return $this->_getConForKey($key)->hSet($key, $id, $var);
         } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -615,8 +630,6 @@ class Redis {
      */
     public function hsetnx($cache_id, $id, $var) {
         $key = $this->getCacheKey($cache_id);
-        $var = $this->setValue($var);
-
         try {
             return $this->_getConForKey($key)->hSetNx($key, $id, $var);
         } catch (Exception $ex) {
@@ -635,7 +648,6 @@ class Redis {
      */
     public function hincr($cache_id, $id, $step = 1) {
         $key = $this->getCacheKey($cache_id);
-        $var = $this->setValue($var);
 
         try {
 
@@ -681,39 +693,11 @@ class Redis {
         $key = $this->getCacheKey($cache_id);
 
         try {
-            return $this->_getConForKey($key)->hdel($key, $id);
+            return $this->_getConForKey($key)->hDel($key, $id);
         } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
             $this->is_available();
-        }
-        return false;
-    }
-
-    /**
-     * 返回 hashmap 中的元素个数.
-     * 参数
-     *      name - hashmap 的名字.
-     * 返回值
-     *      出错则返回 false, 否则返回元素的个数, 0 表示不存在 hashmap(空).
-     */
-    public function hsize($name) {
-        if ($this->is_available()) {
-            return $this->_getConForKey($name)->hLen($name);
-        }
-        return false;
-    }
-
-    /**
-     * 返回整个 hashmap.
-     * 参数
-     *      name - hashmap 的名字.
-     * 返回值
-     *      如果出错则返回 false, 否则返回包含 key-value 的关联数组.
-     */
-    public function hgetall($name) {
-        if ($this->is_available()) {
-            return $this->_getConForKey($name)->hGetAll($name);
         }
         return false;
     }
