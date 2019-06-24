@@ -494,25 +494,29 @@ class Redis {
 
     /**
      * 设置 key(只针对 KV 类型) 的存活时间.
-     * @param type $k
+     * @param type $cache_id
      * @param type $ttl
      * @return type
      */
-    public function expire($k, $ttl) {
+    public function expire($cache_id, $ttl) {
+        $key = $this->getCacheKey($cache_id);
+
         if ($this->is_available()) {
-            return $this->_getConForKey($k)->expire($k, $ttl);
+            return $this->_getConForKey($key)->expire($key, $ttl);
         }
         return false;
     }
 
     /**
      * 返回 key(只针对 KV 类型) 的存活时间.
-     * @param type $k
+     * @param type $cache_id
      * @return type
      */
-    public function ttl($k) {
+    public function ttl($cache_id) {
+        $key = $this->getCacheKey($cache_id);
+
         if ($this->is_available()) {
-            return $this->_getConForKey($k)->ttl($k);
+            return $this->_getConForKey($key)->ttl($key);
         }
         return false;
     }

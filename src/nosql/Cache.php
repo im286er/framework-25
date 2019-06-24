@@ -342,6 +342,20 @@ class Cache {
     }
 
     /**
+     * 设置 key(只针对 KV 类型) 的存活时间.
+     * @param type $cache_id
+     * @param type $ttl
+     * @return type
+     */
+    public function expire($cache_id, $ttl) {
+        $key = $this->prefix . $cache_id;
+        if ($this->is_available()) {
+            return $this->link->touch($key, $ttl);
+        }
+        return false;
+    }
+
+    /**
      * 操作次数限制函数: 限制 user_id 在 period 秒内能操作 action 最多 max_count 次.
      * 如果超过限制, 返回 false.
      * @param type $uid
