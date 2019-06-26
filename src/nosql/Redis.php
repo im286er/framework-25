@@ -522,6 +522,15 @@ class Redis {
     }
 
     /**
+     * 获取毫秒时间戳
+     * @return int
+     */
+    function get_js_timestamp() {
+        list($t1, $t2) = explode(' ', microtime());
+        return intval((floatval($t1) + floatval($t2)) * 1000);
+    }
+
+    /**
      *  操作次数限制函数: 限制 uid 在 period 秒内能操作 action 最多 max_count 次.
      *  如果超过限制, 返回 false.
      * @param type $uid
@@ -534,10 +543,22 @@ class Redis {
         $now = time();
         $expire = intval($now / $period) * $period + $period;
         $ttl = $expire - $now;
-        $key = "act_limit_" . md5("{$uid}_{$action}");
-        $count = $this->_getConForKey($key)->incr($key, 1);
-        $this->expire($key, $ttl);
-        if ($count === false || $count > $max_count) {
+
+        //将时间戳写入有序集合里面        
+        $zname = "act_limit:{$uid}:{$action}:nums";
+        $key = $this->get_js_timestamp();
+        $this->zset($zname, $key, $now);
+
+        //设置key的过期时间为 $ttl 秒
+        $this->expire($zname, $ttl);
+
+        /* 删除过期的数据 */
+        $end_time = $now - $ttl;
+        $this->zremrangebyscore($zname, 0, $end_time);
+
+        /* 获取里面剩下请求个数 */
+        $request_nums = $this->zsize($zname);
+        if ($request_nums > $max_count) {
             return false;
         }
         return true;
