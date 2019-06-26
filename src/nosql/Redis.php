@@ -784,6 +784,22 @@ class Redis {
     }
 
     /**
+     * 删除权重处于区间 [start,end] 的元素.
+     * 参数
+     *      name - zset 的名字.
+     *      start - (包含).
+     *      end -(包含).
+     * 返回值
+     *      出错则返回 false, 否则返回被删除的元素个数.
+     */
+    public function zremrangebyscore($name, $score_start, $score_end) {
+        if ($this->is_available()) {
+            return $this->_getConForKey($name)->zRemRangeByScore($name, $score_start, $score_end);
+        }
+        return false;
+    }
+
+    /**
      * 删除 zset 中的所有 key.
      * 参数
      *      name - zset 的名字.
