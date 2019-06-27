@@ -368,6 +368,25 @@ class Redis {
     }
 
     /**
+     * HyperLogLog 增加一个元素到key中
+     * @param   string    $key
+     * @param   array     $var
+     * @return  1/0
+     */
+    public function pfadd($key, $var = []) {
+        return $this->_getConForKey($key)->pfadd($key, $var);
+    }
+
+    /**
+     * HyperLogLog 统计key中不重复元素的个数
+     * @param string $key
+     * @return int
+     */
+    public function pfcount($key) {
+        return $this->_getConForKey($key)->pfcount($key);
+    }
+
+    /**
      * 对指定键名设置锁标记（此锁并不对键值做修改限制,仅为键名的锁标记）;
      * 此方法可用于防止惊群现象发生,在get方法获取键值无效时,先判断键名是否有锁标记,
      * 如果已加锁,则不获取新值;
