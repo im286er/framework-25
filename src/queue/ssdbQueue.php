@@ -100,6 +100,34 @@ class ssdbQueue {
     }
 
     /**
+     * 查看队列数据
+     * @param type $queue_name
+     * @param type $start
+     * @param type $end
+     * @return type
+     */
+    public function qrange($queue_name = 'queue_task', $start = 0, $end = -1) {
+        $queue_name = $this->getQueueKey($queue_name);
+
+        $rows = ssdbService::getInstance()->qrange($queue_name, $start, $end);
+        if (empty($rows)) {
+            return false;
+        }
+
+        $list = [];
+        foreach ($rows as $key => $value) {
+            if (is_null($value) || false === $value) {
+                continue;
+            }
+            $list[] = $this->getValue($value, false);
+        }
+        if (empty($list)) {
+            return false;
+        }
+        return $list;
+    }
+
+    /**
      * 查看队列数量
      * @param type $queue_name
      * @return int

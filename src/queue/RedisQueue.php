@@ -64,6 +64,19 @@ class RedisQueue {
     }
 
     /**
+     * 查看队列数据
+     * @param type $queue_name
+     * @param type $start
+     * @param type $end
+     * @return type
+     */
+    public function qrange($queue_name = 'queue_task', $start = 0, $end = -1) {
+        $queue_name = $this->getQueueKey($queue_name);
+
+        return Redis::getInstance()->lRange($queue_name, $start, $end);
+    }
+
+    /**
      * 查看队列数量
      * @param type $queue_name
      * @return int

@@ -671,6 +671,33 @@ class Redis {
     }
 
     /**
+     * 查看列表中的数据
+     * @param type $name
+     * @param type $start
+     * @param type $end
+     * @return boolean
+     */
+    public function lRange($name = 'queue_task', $start = 0, $end = -1) {
+        $rows = $this->_getConForKey($name)->lRange($name, $start, $end);
+        if (empty($rows)) {
+            return false;
+        }
+
+        $list = [];
+        foreach ($rows as $key => $value) {
+            if (is_null($value) || false === $value) {
+                continue;
+            }
+            $list[] = $this->getValue($value, false);
+        }
+        if (empty($list)) {
+            return false;
+        }
+
+        return $list;
+    }
+
+    /**
      * 返回列表 key 的长度
      * @param string $name
      * @return boolean/int
