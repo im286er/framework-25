@@ -108,7 +108,7 @@ class Log {
         }
 
         if (empty($destination)) {
-            $destination = ROOT_PATH . "cache/{$level}_" . date('Ymd') . '.log';
+            $destination = ROOT_PATH . "cache/logs/{$level}_" . date('Ymd') . '.log';
             $destination = strtolower($destination);
         }
 
