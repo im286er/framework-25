@@ -562,25 +562,21 @@ class Redis {
         $now = time();
         $expire = intval($now / $period) * $period + $period;
         $ttl = $expire - $now;
+        $end_time = $now - $ttl;
 
-        //将时间戳写入有序集合里面        
+        //将时间戳写入有序集合里面
         $zname = "act_limit:{$uid}:{$action}:nums";
         $key = $this->get_js_timestamp();
-        $this->zset($zname, $key, $now);
 
-        //设置key的过期时间为 $ttl 秒
-        $this->expire($zname, $ttl);
-
+        $pipe = $this->_getConForKey($zname)->multi(\Redis::PIPELINE); //使用管道提升性能
+        $pipe->zAdd($zname, $key, $now);
         /* 删除过期的数据 */
-        $end_time = $now - $ttl;
-        $this->zremrangebyscore($zname, 0, $end_time);
+        $pipe->zremrangebyscore($zname, 0, $end_time); //移除时间窗口之前的行为记录，剩下的都是时间窗口内的
+        $pipe->zcard($zname);  //获取窗口内的行为数量
+        $pipe->expire($zname, $ttl + 1);  //多加一秒过期时间
+        $replies = $pipe->exec();
 
-        /* 获取里面剩下请求个数 */
-        $request_nums = $this->zsize($zname);
-        if ($request_nums > $max_count) {
-            return false;
-        }
-        return true;
+        return $replies[2] <= $max_count;
     }
 
     /**
