@@ -68,6 +68,7 @@ class MYSQLModel {
         if (!empty($name)) {
             $this->name = $name;
         }
+        $this->dbName = $connection;
         // 数据库初始化操作
         $this->db = MySQL::getInstance($connection);
     }
@@ -788,6 +789,10 @@ class MYSQLModel {
         return $this->name;
     }
 
+    public function getdbName() {
+        return $this->dbName;
+    }
+
     /**
      * 启动事务
      * @access public
@@ -879,7 +884,13 @@ class MYSQLModel {
             return $fields;
         } else {
             $table = $this->getTableName();
-            $fields = $this->db->getFields($table);
+            $cache_id = 'getFields:' . $this->getdbName() . $table;
+            $fields = Redis::getInstance()->simple_get($cache_id);
+            if (empty($fields)) {
+                $fields = $this->db->getFields($table);
+                /* 表结构缓存 60 秒 */
+                Redis::getInstance()->simple_set($cache_id, $fields, 60);
+            }
             return $fields ? array_keys($fields) : false;
         }
         return false;
@@ -1162,8 +1173,9 @@ class MYSQLModel {
      * @return Model
      */
     public function setProperty($name, $value) {
-        if (property_exists($this, $name))
+        if (property_exists($this, $name)) {
             $this->$name = $value;
+        }
         return $this;
     }
 
