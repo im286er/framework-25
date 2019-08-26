@@ -8,7 +8,7 @@ use framework\core\Exception;
 /**
  * 缓存类  memcached
  */
-class Cache {
+class MemcachedCache {
 
     private $conf;
     private $group = '_cache_';

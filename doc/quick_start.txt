@@ -30,7 +30,7 @@
 │   │       ├── MYSQLModel.php                 mysql模型类
 │   │       └── PGSQLModel.php                 pgsql模型类
 │   ├── nosql
-│   │   ├── Cache.php							memcached缓存类
+│   │   ├── MemcachedCache.php							memcached缓存类
 │   │   ├── delayQueue.php						延时队列
 │   │   ├── Flexihash.php						hash一致性
 │   │   ├── Queue.php							队列

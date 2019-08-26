@@ -2,7 +2,7 @@
 
 namespace framework\session;
 
-use framework\nosql\Cache;
+use framework\nosql\MemcachedCache;
 
 /**
  * session memcached 驱动类
@@ -23,14 +23,14 @@ class memcachedDriver extends \SessionHandler {
         if (empty($session_id)) {
             return '';
         }
-        return (string) Cache::getInstance()->simple_get($session_id);
+        return (string) MemcachedCache::getInstance()->simple_get($session_id);
     }
 
     public function write($session_id, $session_data) {
         if (empty($session_id)) {
             return false;
         }
-        Cache::getInstance()->simple_set($session_id, $session_data, $this->ttl);
+        MemcachedCache::getInstance()->simple_set($session_id, $session_data, $this->ttl);
         return true;
     }
 
@@ -38,7 +38,7 @@ class memcachedDriver extends \SessionHandler {
         if (empty($session_id)) {
             return false;
         }
-        Cache::getInstance()->simple_delete($session_id);
+        MemcachedCache::getInstance()->simple_delete($session_id);
         return true;
     }
 
