@@ -307,7 +307,7 @@ class Redis {
         $key = $this->getCacheKey("{$this->group}_{$cache_id}");
 
         try {
-            return $this->_getConForKey($key)->delete($key);
+            return $this->_getConForKey($key)->del($key);
         } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -484,7 +484,7 @@ class Redis {
         $key = $this->getCacheKey($cache_id);
 
         try {
-            return $this->_getConForKey($key)->delete($key);
+            return $this->_getConForKey($key)->del($key);
         } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -502,7 +502,7 @@ class Redis {
         $key = $this->getCacheKey($cache_id);
 
         try {
-            return $this->_getConForKey($key)->delete($key);
+            return $this->_getConForKey($key)->del($key);
         } catch (Exception $ex) {
             //连接状态置为false
             $this->isConnected = false;
@@ -871,7 +871,7 @@ class Redis {
      */
     public function zclear($name) {
         if ($this->is_available()) {
-            return $this->_getConForKey($name)->delete($name);
+            return $this->_getConForKey($name)->del($name);
         }
         return false;
     }
