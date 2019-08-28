@@ -894,18 +894,6 @@ class Redis {
     }
 
     /**
-     * 获取状态
-     * @return type
-     */
-    public function get_stats() {
-        $data = [];
-        foreach ($this->link as $key => $value) {
-            $data[$key] = $this->link[$key]->info();
-        }
-        return $data;
-    }
-
-    /**
      * 最好能保证它能最后析构!
      * 关闭连接
      */

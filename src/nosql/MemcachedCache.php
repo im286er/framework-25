@@ -391,12 +391,4 @@ class MemcachedCache {
         return true;
     }
 
-    /**
-     * 获取状态
-     * @return type
-     */
-    public function get_stats() {
-        return $this->link->getStats();
-    }
-
 }
